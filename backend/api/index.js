@@ -12,7 +12,6 @@ const authRoutes = require("./routes/auth");
 const profileRoutes = require("./routes/profile");
 const feedbackRoutes = require("./routes/feedback");
 const creatorsRoutes = require("./routes/creators");
-const shopRoutes = require("./routes/shop");
 const paymentRoutes = require("./routes/payment");
 
 // Security middleware
@@ -54,7 +53,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/creators", creatorsRoutes);
-app.use("/api/shop", shopRoutes);
 app.use("/api/payment", paymentRoutes);
 
 // Health check

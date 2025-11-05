@@ -39,12 +39,6 @@ export default function Navbar() {
                     แพ็กเกจ
                 </Link>
                 <Link
-                    href="/shop"
-                    className="hover:text-cyan-400 transition-colors"
-                >
-                    ร้านค้า
-                </Link>
-                <Link
                     href="/examples"
                     className="hover:text-cyan-400 transition-colors"
                 >
