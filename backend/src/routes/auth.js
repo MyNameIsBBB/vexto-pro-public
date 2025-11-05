@@ -308,6 +308,183 @@ router.get("/discord/callback", async (req, res) => {
     }
 });
 
+// Google OAuth2
+// Start OAuth: redirect user to Google authorization URL
+router.get("/google/start", async (req, res) => {
+    try {
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        const redirectUri =
+            req.query.redirect_uri || process.env.GOOGLE_REDIRECT_URI;
+
+        if (!clientId || !redirectUri) {
+            return res
+                .status(500)
+                .json({ error: "Google OAuth not configured" });
+        }
+
+        const authUrl =
+            `https://accounts.google.com/o/oauth2/v2/auth?` +
+            `response_type=code&` +
+            `client_id=${encodeURIComponent(clientId)}&` +
+            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+            `scope=${encodeURIComponent("openid email profile")}&` +
+            `access_type=offline&` +
+            `prompt=consent`;
+        res.redirect(authUrl);
+    } catch (e) {
+        console.error("Google start error", e);
+        res.status(500).json({ error: "Failed to start Google OAuth" });
+    }
+});
+
+// Handle Google OAuth callback
+router.get("/google/callback", async (req, res) => {
+    try {
+        const { code, state } = req.query;
+
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+        const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+        const frontendRedirect =
+            process.env.GOOGLE_FRONTEND_REDIRECT ||
+            (process.env.FRONTEND_BASE_URL
+                ? `${process.env.FRONTEND_BASE_URL}/auth/google/callback`
+                : "http://localhost:3000/auth/google/callback");
+
+        if (!clientId || !clientSecret || !redirectUri) {
+            return res
+                .status(500)
+                .json({ error: "Google OAuth not configured" });
+        }
+
+        if (!code) {
+            return res.status(400).json({ error: "No code provided" });
+        }
+
+        // Exchange code for access token
+        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                client_id: clientId,
+                client_secret: clientSecret,
+                code,
+                grant_type: "authorization_code",
+                redirect_uri: redirectUri,
+            }),
+        });
+        const tokenJson = await tokenRes.json();
+        if (!tokenRes.ok || !tokenJson.access_token) {
+            console.error("Google token error", tokenJson);
+            return res.status(400).json({ error: "Failed to get token" });
+        }
+
+        const accessToken = tokenJson.access_token;
+
+        // Fetch Google user
+        const userRes = await fetch(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            }
+        );
+        const googleUser = await userRes.json();
+        if (!userRes.ok) {
+            console.error("Google user error", googleUser);
+            return res.status(400).json({ error: "Failed to fetch user" });
+        }
+
+        // Upsert local user
+        const email = (googleUser.email || "").toLowerCase();
+        const usernameBase = (
+            googleUser.name ||
+            googleUser.email ||
+            "google_user"
+        )
+            .toLowerCase()
+            .replace(/[^a-z0-9_\.\-]/g, "")
+            .substring(0, 20);
+
+        let user = null;
+        if (email) user = await User.findOne({ email });
+
+        if (!user) {
+            const passwordHash = await bcrypt.hash(
+                `google:${googleUser.id}:${Date.now()}`,
+                10
+            );
+            let uniqueUsername = usernameBase || `google_${googleUser.id}`;
+            let iter = 0;
+            while (await User.findOne({ username: uniqueUsername })) {
+                iter += 1;
+                uniqueUsername = `${usernameBase}${iter}`;
+            }
+            user = await User.create({
+                email: email || undefined,
+                username: uniqueUsername,
+                passwordHash,
+            });
+
+            // Create profile
+            await Profile.create({
+                userId: user._id,
+                username: user.username,
+                displayName: googleUser.name || googleUser.email,
+                avatarUrl: googleUser.picture || "",
+                bio: "",
+                theme: {
+                    mode: "dark",
+                    primary: "#7c3aed",
+                    background: "#0b1020",
+                    outerBackground: "#0b1020",
+                    accent: "#22d3ee",
+                },
+                blocks: [],
+            });
+        } else {
+            // Ensure profile exists for existing user
+            const existingProfile = await Profile.findOne({ userId: user._id });
+            if (!existingProfile) {
+                await Profile.create({
+                    userId: user._id,
+                    username: user.username,
+                    displayName: googleUser.name || googleUser.email,
+                    avatarUrl: googleUser.picture || "",
+                    bio: "",
+                    theme: {
+                        mode: "dark",
+                        primary: "#7c3aed",
+                        background: "#0b1020",
+                        outerBackground: "#0b1020",
+                        accent: "#22d3ee",
+                    },
+                    blocks: [],
+                });
+            }
+        }
+
+        const token = signToken(user._id.toString());
+        if (state) {
+            res.redirect(
+                `${frontendRedirect}?token=${encodeURIComponent(
+                    token
+                )}&state=${encodeURIComponent(state)}`
+            );
+        } else {
+            res.redirect(
+                `${frontendRedirect}?token=${encodeURIComponent(token)}`
+            );
+        }
+        return res.json({
+            token,
+            user: { id: user._id, email: user.email, username: user.username },
+        });
+    } catch (e) {
+        console.error("Google callback error", e);
+        return res.status(500).json({ error: "Google OAuth failed" });
+    }
+});
+
 // Change username (Pro only)
 router.put("/username", auth, async (req, res) => {
     try {
