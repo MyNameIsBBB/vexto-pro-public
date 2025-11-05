@@ -27,6 +27,9 @@ const sarabun = Sarabun({
 export const metadata = {
     title: "Vexto",
     description: "Build your custom profile page",
+    icons: {
+        icon: '/favicon.ico',
+    },
 };
 
 export default function RootLayout({ children }) {
