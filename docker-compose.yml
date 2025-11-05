@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+    # MongoDB Database
+    mongodb:
+        image: mongo:7
+        container_name: vectr-mongodb
+        restart: unless-stopped
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: vectr
+            MONGO_INITDB_ROOT_PASSWORD: vectr_password_change_me
+        volumes:
+            - mongodb_data:/data/db
+        ports:
+            - "27017:27017"
+        networks:
+            - vectr-network
+
+    # Backend API
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: vectr-backend
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            PORT: 5001
+            MONGODB_URI: mongodb://vectr:vectr_password_change_me@mongodb:27017/vectr?authSource=admin
+            JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+            CORS_ORIGIN: http://localhost:3000
+        depends_on:
+            - mongodb
+        ports:
+            - "5001:5001"
+        networks:
+            - vectr-network
+
+    # Frontend
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: vectr-frontend
+        restart: unless-stopped
+        environment:
+            NEXT_PUBLIC_API_BASE_URL: http://localhost:5001/api
+        depends_on:
+            - backend
+        ports:
+            - "3000:3000"
+        networks:
+            - vectr-network
+
+volumes:
+    mongodb_data:
+        driver: local
+
+networks:
+    vectr-network:
+        driver: bridge

@@ -1,0 +1,51 @@
+# Files to ignore during Vercel deployment
+
+# Development files
+*.md
+!README.md
+.git/
+.github/
+.DS_Store
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+DOCKER_SETUP.md
+
+# Environment examples
+.env.example
+.env.local.example
+.env.production.example
+
+# Documentation (except README)
+SETUP.md
+INTEGRATION_GUIDE.md
+CHANGES_SUMMARY.md
+
+# Node modules (Vercel installs these)
+node_modules/
+
+# Build artifacts
+.next/
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Deployment script
+deploy.sh
