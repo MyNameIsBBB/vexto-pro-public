@@ -48,8 +48,13 @@ export default function HomePage() {
                         />
                         โปรไฟล์เท่ ทันสมัย สำหรับทุกคน
                     </p>
-                    <h1 className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 text-transparent bg-clip-text animate-gradient">
-                        Vexto
+                    <h1 className="mt-6 text-5xl md:text-6xl font-extrabold leading-tight">
+                        <span className="block text-white">
+                            สร้างโปรไฟล์/พอร์ตโฟลิโอ
+                        </span>
+                        <span className="block mt-2 pb-5 bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] bg-clip-text text-transparent">
+                            ทันสมัย อิสระ ไม่ยุ่งยาก ในสไตล์คุณ
+                        </span>
                     </h1>
                     <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
                         เหมาะกับวัยรุ่น ครีเอเตอร์ ร้านเล็ก ๆ
