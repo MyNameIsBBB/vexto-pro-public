@@ -75,6 +75,23 @@ router.put("/me", auth, validateProfileUpdate, async (req, res) => {
             }
         }
 
+        // Normalize blocks: preserve any top-level fields (e.g., header, title) by moving them into props
+        const normalizedBlocks = (finalBlocks || []).map((b) => {
+            const props = b && typeof b.props === "object" && b.props ? { ...b.props } : {};
+            // Move any extra top-level keys into props to avoid data loss
+            Object.keys(b || {}).forEach((key) => {
+                if (!["id", "type", "props"].includes(key)) {
+                    // if not already present in props, copy it
+                    if (props[key] === undefined) props[key] = b[key];
+                }
+            });
+            return {
+                id: b?.id || uuidv4(),
+                type: b?.type,
+                props,
+            };
+        });
+
         const profile = await Profile.findOneAndUpdate(
             { userId: req.userId },
             {
@@ -84,11 +101,7 @@ router.put("/me", auth, validateProfileUpdate, async (req, res) => {
                     bio,
                     theme,
                     slug: slug ? String(slug).toLowerCase().trim() : undefined,
-                    blocks: finalBlocks.map((b) => ({
-                        id: b.id || uuidv4(),
-                        type: b.type,
-                        props: b.props || {},
-                    })),
+                    blocks: normalizedBlocks,
                     isPublic: typeof isPublic === "boolean" ? isPublic : true,
                 },
             },

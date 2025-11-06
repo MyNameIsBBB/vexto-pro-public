@@ -15,6 +15,17 @@ export default function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Ensure the deepest background is controlled by profile outer background
+    useEffect(() => {
+        if (typeof document !== "undefined") {
+            const prev = document.body.style.background;
+            document.body.style.background = "transparent";
+            return () => {
+                document.body.style.background = prev;
+            };
+        }
+    }, []);
+
     useEffect(() => {
         async function fetchProfile() {
             try {
