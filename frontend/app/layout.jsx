@@ -28,7 +28,7 @@ export const metadata = {
     title: "Vexto",
     description: "Build your custom profile page",
     icons: {
-        icon: "/favicon.ico",
+        icon: "/icon.svg",
     },
 };
 
