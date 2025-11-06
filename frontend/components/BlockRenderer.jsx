@@ -5,6 +5,7 @@ export default function BlockRenderer({
     blocks = [],
     theme,
     containerClassName,
+    separated = false,
 }) {
     // Helpers
     const readableText = (bg) => {
@@ -84,11 +85,8 @@ export default function BlockRenderer({
             {groupedBlocks.map((b, idx) => {
                 // Button groups
                 if (b.type === "button-group") {
-                    return (
-                        <div
-                            key={`group-${idx}`}
-                            className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 mb-3"
-                        >
+                    const content = (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 mb-3">
                             {b.items.map((item) => {
                                 const size = item.props?.size || "default";
                                 const sizeClasses = {
@@ -118,6 +116,14 @@ export default function BlockRenderer({
                             })}
                         </div>
                     );
+                    return (
+                        <div key={`group-${idx}`}>
+                            {content}
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
+                            )}
+                        </div>
+                    );
                 }
 
                 // Header
@@ -132,33 +138,38 @@ export default function BlockRenderer({
                         "header",
                         theme?.accent || theme?.textColor || "#f3f4f6"
                     );
-                    return (
+                    const node = (
                         <h2
-                            key={b.id}
                             className={sizeClasses[size] || sizeClasses.default}
                             style={{ color: headerColor }}
                         >
                             {b.props?.title || "หัวข้อ"}
                         </h2>
                     );
+                    return (
+                        <div key={b.id}>
+                            {node}
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
+                            )}
+                        </div>
+                    );
                 }
 
                 // Text
                 if (b.type === "text") {
                     const c = getTxt("body", theme?.textColor || "#f3f4f6");
+                    const node = (
+                        <div className="p-4 rounded-xl" style={{ borderRadius: br, background: blockBg, border: `1px solid ${blockBorder}` }}>
+                            <p className="leading-relaxed" style={{ color: c }}>{b.props?.text}</p>
+                        </div>
+                    );
                     return (
-                        <div
-                            key={b.id}
-                            className="p-4 rounded-xl"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
-                            <p className="leading-relaxed" style={{ color: c }}>
-                                {b.props?.text}
-                            </p>
+                        <div key={b.id}>
+                            {node}
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
+                            )}
                         </div>
                     );
                 }
@@ -171,37 +182,29 @@ export default function BlockRenderer({
                         default: "p-3 text-base",
                         large: "p-3.5 text-base",
                     };
-                    return (
+                    const node = (
                         <Link
-                            key={b.id}
                             href={b.props?.url || "#"}
-                            className={`block text-center rounded-lg font-medium transition-colors hover:opacity-90 ${
-                                sizeClasses[size] || sizeClasses.default
-                            }`}
-                            style={{
-                                background: buttonBg,
-                                color:
-                                    getTxt("buttonLabel") ||
-                                    readableText(buttonBg),
-                                borderRadius: br,
-                            }}
+                            className={`block text-center rounded-lg font-medium transition-colors hover:opacity-90 ${sizeClasses[size] || sizeClasses.default}`}
+                            style={{ background: buttonBg, color: getTxt("buttonLabel") || readableText(buttonBg), borderRadius: br }}
                         >
                             {b.props?.label || b.props?.url}
                         </Link>
+                    );
+                    return (
+                        <div key={b.id}>
+                            {node}
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
+                            )}
+                        </div>
                     );
                 }
 
                 // Image
                 if (b.type === "image") {
-                    return (
-                        <div
-                            key={b.id}
-                            className="overflow-hidden rounded-xl2"
-                            style={{
-                                borderRadius: br,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                    const node = (
+                        <div className="overflow-hidden rounded-xl2" style={{ borderRadius: br, border: `1px solid ${blockBorder}` }}>
                             {b.props?.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -216,6 +219,14 @@ export default function BlockRenderer({
                                 >
                                     ยังไม่ได้ใส่รูป
                                 </div>
+                            )}
+                        </div>
+                    );
+                    return (
+                        <div key={b.id}>
+                            {node}
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
                             )}
                         </div>
                     );
@@ -2118,6 +2129,11 @@ export default function BlockRenderer({
                     </div>
                 );
             })}
+            {separated && groupedBlocks.length > 1 && (
+                // Render dividers between items by overlaying hr using CSS gaps would require wrapping each.
+                // Instead, we render nothing here; per-item separators are inserted inline below.
+                <></>
+            )}
         </div>
     );
 }

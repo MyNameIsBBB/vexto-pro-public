@@ -850,46 +850,57 @@ export default function EditV2Page() {
                                             : [block];
 
                                         return (
-                                            <div
-                                                key={block.id || index}
-                                                className={`relative group cursor-move ${
-                                                    draggedIndex === index
-                                                        ? "opacity-50 scale-95"
-                                                        : ""
-                                                }`}
-                                                draggable
-                                                onDragStart={() =>
-                                                    handleDragStart(index)
-                                                }
-                                                onDragOver={(e) =>
-                                                    handleDragOver(e, index)
-                                                }
-                                                onDragEnd={handleDragEnd}
-                                            >
-                                                <BlockRenderer
-                                                    blocks={blocksToRender}
-                                                    theme={profile.theme}
-                                                />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
-                                                    <button
-                                                        onClick={() =>
-                                                            openEditModal(index)
-                                                        }
-                                                        className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                        title="แก้ไข"
-                                                    >
-                                                        <MdEdit className="w-5 h-5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            deleteBlock(index)
-                                                        }
-                                                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                        title="ลบ"
-                                                    >
-                                                        <FiTrash2 className="w-5 h-5" />
-                                                    </button>
+                                            <div key={block.id || index}>
+                                                <div
+                                                    className={`relative group cursor-move ${
+                                                        draggedIndex === index
+                                                            ? "opacity-50 scale-95"
+                                                            : ""
+                                                    }`}
+                                                    draggable
+                                                    onDragStart={() =>
+                                                        handleDragStart(index)
+                                                    }
+                                                    onDragOver={(e) =>
+                                                        handleDragOver(e, index)
+                                                    }
+                                                    onDragEnd={handleDragEnd}
+                                                >
+                                                    <BlockRenderer
+                                                        blocks={blocksToRender}
+                                                        theme={profile.theme}
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
+                                                        <button
+                                                            onClick={() =>
+                                                                openEditModal(index)
+                                                            }
+                                                            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                            title="แก้ไข"
+                                                        >
+                                                            <MdEdit className="w-5 h-5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                deleteBlock(index)
+                                                            }
+                                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                            title="ลบ"
+                                                        >
+                                                            <FiTrash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
+                                                {index < profile.blocks.length - 1 && (
+                                                    <hr
+                                                        className="my-4 border-t"
+                                                        style={{
+                                                            borderColor:
+                                                                profile.theme?.elementColors?.divider ||
+                                                                "rgba(255,255,255,0.1)",
+                                                        }}
+                                                    />
+                                                )}
                                             </div>
                                         );
                                     })}

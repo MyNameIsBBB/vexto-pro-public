@@ -298,6 +298,7 @@ export default function UserProfile() {
                                                     : profile.blocks.slice(0, 3)
                                             }
                                             theme={theme}
+                                            separated={true}
                                         />
                                     </div>
                                 ) : (
