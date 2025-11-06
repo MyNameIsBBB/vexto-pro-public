@@ -19,6 +19,9 @@ const {
 
 const app = express();
 
+// Trust proxy - required for rate limiting behind nginx/reverse proxy
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(express.json({ limit: "2mb" }));
