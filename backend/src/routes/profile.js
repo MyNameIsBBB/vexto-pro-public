@@ -166,8 +166,6 @@ router.put("/me/username", auth, async (req, res) => {
     }
 });
 
-module.exports = router;
-
 // Public: get profile by username (must be last)
 router.get("/:handle", async (req, res) => {
     try {
@@ -194,3 +192,5 @@ router.get("/:handle", async (req, res) => {
         res.status(500).json({ error: "Failed to fetch profile" });
     }
 });
+
+module.exports = router;
