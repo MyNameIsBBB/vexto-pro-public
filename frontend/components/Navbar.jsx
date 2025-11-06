@@ -84,6 +84,9 @@ export default function Navbar() {
                                         href={`/profile/${profileUsername}`}
                                         className="relative inline-flex items-center justify-center w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:border-white/40 transition-colors"
                                         title="โปรไฟล์ของฉัน"
+                                        onClick={() => {
+                                            console.log("🔗 Clicking profile link:", `/profile/${profileUsername}`);
+                                        }}
                                     >
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
@@ -192,7 +195,10 @@ export default function Navbar() {
                                 <Link
                                     href={`/profile/${profileUsername}`}
                                     className="flex items-center gap-3 py-2 px-3 hover:bg-white/10 rounded-lg transition-colors text-white"
-                                    onClick={closeMobileMenu}
+                                    onClick={() => {
+                                        console.log("🔗 Clicking mobile profile link:", `/profile/${profileUsername}`);
+                                        closeMobileMenu();
+                                    }}
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img

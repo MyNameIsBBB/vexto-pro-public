@@ -11,6 +11,8 @@ export default function UserProfile() {
     const params = useParams();
     const username = params.username;
 
+    console.log("🎯 Profile Page Rendered - Username:", username);
+
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
