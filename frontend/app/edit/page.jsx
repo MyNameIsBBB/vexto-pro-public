@@ -869,6 +869,7 @@ export default function EditV2Page() {
                                                     <BlockRenderer
                                                         blocks={blocksToRender}
                                                         theme={profile.theme}
+                                                        separated={true}
                                                     />
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
                                                         <button
@@ -891,16 +892,7 @@ export default function EditV2Page() {
                                                         </button>
                                                     </div>
                                                 </div>
-                                                {index < profile.blocks.length - 1 && (
-                                                    <hr
-                                                        className="my-4 border-t"
-                                                        style={{
-                                                            borderColor:
-                                                                profile.theme?.elementColors?.divider ||
-                                                                "rgba(255,255,255,0.1)",
-                                                        }}
-                                                    />
-                                                )}
+                                                {/* Separator handled by BlockRenderer when separated=true */}
                                             </div>
                                         );
                                     })}
