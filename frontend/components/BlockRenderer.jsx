@@ -149,9 +149,6 @@ export default function BlockRenderer({
                     return (
                         <div key={b.id}>
                             {node}
-                            {separated && idx < groupedBlocks.length - 1 && (
-                                <hr className="my-4" style={{ borderColor: dividerColor }} />
-                            )}
                         </div>
                     );
                 }
@@ -432,51 +429,56 @@ export default function BlockRenderer({
                         { name: "สปาเท้า", desc: "45 นาที", price: "฿250" },
                     ];
                     return (
-                        <div key={b.id} className="space-y-2">
-                            {items.map((sv, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl2 p-4"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
-                                    <div className="flex items-baseline justify-between gap-3">
-                                        <div>
-                                            <div
-                                                className="font-semibold"
-                                                style={{ color: header }}
-                                            >
-                                                {sv.name}
-                                            </div>
-                                            {sv.desc && (
+                        <div key={b.id}>
+                            <div className="space-y-2">
+                                {items.map((sv, i) => (
+                                    <div
+                                        key={i}
+                                        className="rounded-xl2 p-4"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
+                                    >
+                                        <div className="flex items-baseline justify-between gap-3">
+                                            <div>
                                                 <div
-                                                    className="text-sm mt-0.5"
+                                                    className="font-semibold"
+                                                    style={{ color: header }}
+                                                >
+                                                    {sv.name}
+                                                </div>
+                                                {sv.desc && (
+                                                    <div
+                                                        className="text-sm mt-0.5"
+                                                        style={{
+                                                            color: muted,
+                                                            opacity: 0.9,
+                                                        }}
+                                                    >
+                                                        {sv.desc}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {sv.price && (
+                                                <div
+                                                    className="text-sm font-medium px-2 py-1 rounded-md"
                                                     style={{
-                                                        color: muted,
-                                                        opacity: 0.9,
+                                                        color: body,
+                                                        border: `1px solid ${blockBorder}`,
                                                     }}
                                                 >
-                                                    {sv.desc}
+                                                    {sv.price}
                                                 </div>
                                             )}
                                         </div>
-                                        {sv.price && (
-                                            <div
-                                                className="text-sm font-medium px-2 py-1 rounded-md"
-                                                style={{
-                                                    color: body,
-                                                    border: `1px solid ${blockBorder}`,
-                                                }}
-                                            >
-                                                {sv.price}
-                                            </div>
-                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
+                            )}
                         </div>
                     );
                 }
@@ -504,52 +506,56 @@ export default function BlockRenderer({
                         },
                     ];
                     return (
-                        <div
-                            key={b.id}
-                            className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-                        >
-                            {plans.map((p, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl2 p-4"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
+                        <div key={b.id}>
+                            <div
+                                className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+                            >
+                                {plans.map((p, i) => (
                                     <div
-                                        className="text-lg font-bold"
-                                        style={{ color: header }}
+                                        key={i}
+                                        className="rounded-xl2 p-4"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
                                     >
-                                        {p.title}
+                                        <div
+                                            className="text-lg font-bold"
+                                            style={{ color: header }}
+                                        >
+                                            {p.title}
+                                        </div>
+                                        <div
+                                            className="mt-1 text-2xl font-extrabold"
+                                            style={{ color: header }}
+                                        >
+                                            {p.price}
+                                        </div>
+                                        {Array.isArray(p.features) &&
+                                            p.features.length > 0 && (
+                                                <ul className="mt-3 space-y-1">
+                                                    {p.features.map((f, j) => (
+                                                        <li
+                                                            key={j}
+                                                            className="text-sm flex items-start gap-2"
+                                                            style={{
+                                                                color: muted,
+                                                                opacity: 0.9,
+                                                            }}
+                                                        >
+                                                            <span>•</span>
+                                                            <span>{f}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
                                     </div>
-                                    <div
-                                        className="mt-1 text-2xl font-extrabold"
-                                        style={{ color: header }}
-                                    >
-                                        {p.price}
-                                    </div>
-                                    {Array.isArray(p.features) &&
-                                        p.features.length > 0 && (
-                                            <ul className="mt-3 space-y-1">
-                                                {p.features.map((f, j) => (
-                                                    <li
-                                                        key={j}
-                                                        className="text-sm flex items-start gap-2"
-                                                        style={{
-                                                            color: muted,
-                                                            opacity: 0.9,
-                                                        }}
-                                                    >
-                                                        <span>•</span>
-                                                        <span>{f}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
+                            )}
                         </div>
                     );
                 }
@@ -579,11 +585,11 @@ export default function BlockRenderer({
                     const variant = b.props?.variant || b.props?.style;
                     if (variant === "image-grid" || b.props?.imagesOnly) {
                         return (
-                            <div
-                                key={b.id}
-                                className="grid grid-cols-2 sm:grid-cols-3 gap-3"
-                            >
-                                {items.map((p, i) => {
+                            <div key={b.id}>
+                                <div
+                                    className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                                >
+                                    {items.map((p, i) => {
                                     const Img = (
                                         <div
                                             className="rounded-xl2 overflow-hidden"
@@ -612,92 +618,100 @@ export default function BlockRenderer({
                                     ) : (
                                         <div key={i}>{Img}</div>
                                     );
-                                })}
+                                    })}
+                                </div>
+                                {separated && idx < groupedBlocks.length - 1 && (
+                                    <hr className="my-4" style={{ borderColor: dividerColor }} />
+                                )}
                             </div>
                         );
                     }
 
                     return (
-                        <div
-                            key={b.id}
-                            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                        >
-                            {items.map((p, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl2 overflow-hidden"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
-                                    {p.image && (
-                                        <div
-                                            className="aspect-[16/9] w-full overflow-hidden"
-                                            style={{
-                                                borderBottom: `1px solid ${blockBorder}`,
-                                            }}
-                                        >
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
-                                                src={p.image}
-                                                alt={p.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="p-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <div
-                                                    className="font-semibold"
-                                                    style={{ color: header }}
-                                                >
-                                                    {p.name}
-                                                </div>
-                                                {p.desc && (
+                        <div key={b.id}>
+                            <div
+                                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                            >
+                                {items.map((p, i) => (
+                                    <div
+                                        key={i}
+                                        className="rounded-xl2 overflow-hidden"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
+                                    >
+                                        {p.image && (
+                                            <div
+                                                className="aspect-[16/9] w-full overflow-hidden"
+                                                style={{
+                                                    borderBottom: `1px solid ${blockBorder}`,
+                                                }}
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={p.image}
+                                                    alt={p.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
                                                     <div
-                                                        className="text-sm mt-0.5"
+                                                        className="font-semibold"
+                                                        style={{ color: header }}
+                                                    >
+                                                        {p.name}
+                                                    </div>
+                                                    {p.desc && (
+                                                        <div
+                                                            className="text-sm mt-0.5"
+                                                            style={{
+                                                                color: muted,
+                                                                opacity: 0.9,
+                                                            }}
+                                                        >
+                                                            {p.desc}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {p.price && (
+                                                    <div
+                                                        className="text-sm font-medium px-2 py-1 rounded-md whitespace-nowrap"
                                                         style={{
-                                                            color: muted,
-                                                            opacity: 0.9,
+                                                            color: body,
+                                                            border: `1px solid ${blockBorder}`,
                                                         }}
                                                     >
-                                                        {p.desc}
+                                                        {p.price}
                                                     </div>
                                                 )}
                                             </div>
-                                            {p.price && (
-                                                <div
-                                                    className="text-sm font-medium px-2 py-1 rounded-md whitespace-nowrap"
+                                            {p.url && (
+                                                <Link
+                                                    href={p.url}
+                                                    className="inline-block mt-3 px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
                                                     style={{
-                                                        color: body,
-                                                        border: `1px solid ${blockBorder}`,
+                                                        background: buttonBg,
+                                                        color:
+                                                            getTxt("buttonLabel") ||
+                                                            readableText(buttonBg),
+                                                        borderRadius: br,
                                                     }}
                                                 >
-                                                    {p.price}
-                                                </div>
+                                                    ดูรายละเอียด
+                                                </Link>
                                             )}
                                         </div>
-                                        {p.url && (
-                                            <Link
-                                                href={p.url}
-                                                className="inline-block mt-3 px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                                                style={{
-                                                    background: buttonBg,
-                                                    color:
-                                                        getTxt("buttonLabel") ||
-                                                        readableText(buttonBg),
-                                                    borderRadius: br,
-                                                }}
-                                            >
-                                                ดูรายละเอียด
-                                            </Link>
-                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {separated && idx < groupedBlocks.length - 1 && (
+                                <hr className="my-4" style={{ borderColor: dividerColor }} />
+                            )}
                         </div>
                     );
                 }
@@ -2132,7 +2146,7 @@ export default function BlockRenderer({
             {separated && groupedBlocks.length > 1 && (
                 // Render dividers between items by overlaying hr using CSS gaps would require wrapping each.
                 // Instead, we render nothing here; per-item separators are inserted inline below.
-                <></>
+                <hr className="my-4" style={{ borderColor: dividerColor }} />
             )}
         </div>
     );
