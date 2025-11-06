@@ -26,17 +26,16 @@ export function AuthProvider({ children }) {
             const data = await api.get("/profiles/me/info");
             setProfile(data);
             // Set user with username and isPro from server
-            setUser({
+            const userData = {
                 id: data?.user?.id || data.userId,
                 username: data?.user?.username || data.username,
                 email: data?.user?.email,
                 isPro: !!(data?.user?.isPro || data?.isPro),
-            });
-            console.log("Loaded user data:", {
-                id: data?.user?.id || data.userId,
-                username: data?.user?.username || data.username,
-                email: data?.user?.email,
-            });
+            };
+            setUser(userData);
+            console.log("✅ Loaded user data:", userData);
+            console.log("📋 Full profile data:", data);
+            
             // Admin allowlist from ENV (comma separated usernames)
             const adminCsv = process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "";
             const adminList = adminCsv

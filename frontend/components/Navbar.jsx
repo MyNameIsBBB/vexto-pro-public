@@ -12,6 +12,14 @@ export default function Navbar() {
     const proActive = Boolean(isAdmin || user?.isPro);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+    // Debug logging
+    console.log("🔍 Navbar Debug:", {
+        isAuthenticated,
+        username: user?.username,
+        profileUsername: profile?.username,
+        slug: profile?.slug,
+    });
+
     const handleLogout = () => {
         logout();
         setMobileMenuOpen(false);
