@@ -486,6 +486,99 @@ export default function EditV2Page() {
         });
     }
 
+    // Export/Import profile/theme code
+    function encodePayload(obj) {
+        try {
+            const json = JSON.stringify(obj);
+            return typeof window !== "undefined"
+                ? btoa(unescape(encodeURIComponent(json)))
+                : Buffer.from(json, "utf-8").toString("base64");
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function decodePayload(code) {
+        try {
+            const json =
+                typeof window !== "undefined"
+                    ? decodeURIComponent(escape(atob(code)))
+                    : Buffer.from(code, "base64").toString("utf-8");
+            return JSON.parse(json);
+        } catch (e) {
+            // Try raw JSON
+            try {
+                return JSON.parse(code);
+            } catch {
+                return null;
+            }
+        }
+    }
+
+    async function exportThemeCode() {
+        const payload = { v: 1, kind: "theme", theme: profile.theme };
+        const code = encodePayload(payload);
+        if (!code) return notify("error", "สร้างโค้ดธีมไม่สำเร็จ");
+        try {
+            await navigator.clipboard.writeText(code);
+            notify("success", "คัดลอกโค้ดธีมแล้ว");
+        } catch {
+            notify("warning", code);
+        }
+    }
+
+    async function exportProfileCode() {
+        const payload = {
+            v: 1,
+            kind: "profile",
+            theme: profile.theme,
+            blocks: profile.blocks,
+            displayName: profile.displayName,
+            bio: profile.bio,
+            avatarUrl: profile.avatarUrl,
+            socials: profile.socials,
+        };
+        const code = encodePayload(payload);
+        if (!code) return notify("error", "สร้างโค้ดโปรไฟล์ไม่สำเร็จ");
+        try {
+            await navigator.clipboard.writeText(code);
+            notify("success", "คัดลอกโค้ดโปรไฟล์แล้ว");
+        } catch {
+            notify("warning", code);
+        }
+    }
+
+    function importCode() {
+        const code = prompt("วางโค้ดธีมหรือโปรไฟล์ที่นี่");
+        if (!code) return;
+        const data = decodePayload(code.trim());
+        if (!data || !data.kind) {
+            notify("error", "โค้ดไม่ถูกต้อง");
+            return;
+        }
+        if (data.kind === "theme" && data.theme) {
+            setProfile((prev) => ({ ...prev, theme: { ...prev.theme, ...data.theme } }));
+            notify("success", "นำเข้าธีมแล้ว");
+        } else if (data.kind === "profile") {
+            const confirmReplace = confirm(
+                "ต้องการนำเข้าโปรไฟล์? บล็อกเดิมจะถูกแทนที่"
+            );
+            if (!confirmReplace) return;
+            setProfile((prev) => ({
+                ...prev,
+                theme: { ...prev.theme, ...data.theme },
+                blocks: Array.isArray(data.blocks) ? data.blocks : prev.blocks,
+                displayName: data.displayName || prev.displayName,
+                bio: data.bio || prev.bio,
+                avatarUrl: data.avatarUrl || prev.avatarUrl,
+                socials: Array.isArray(data.socials) ? data.socials : prev.socials,
+            }));
+            notify("success", "นำเข้าโปรไฟล์แล้ว");
+        } else {
+            notify("error", "ชนิดโค้ดไม่รองรับ");
+        }
+    }
+
     // Drag and drop handlers
     function handleDragStart(index) {
         setDraggedIndex(index);
@@ -1290,6 +1383,31 @@ export default function EditV2Page() {
                                                             </button>
                                                         )
                                                     )}
+                                                </div>
+                                            </div>
+                                            <div className="mt-4">
+                                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                    แชร์/นำเข้า ธีมและโปรไฟล์
+                                                </label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        onClick={exportThemeCode}
+                                                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                                                    >
+                                                        คัดลอกโค้ดธีม
+                                                    </button>
+                                                    <button
+                                                        onClick={exportProfileCode}
+                                                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                                                    >
+                                                        คัดลอกโค้ดโปรไฟล์
+                                                    </button>
+                                                    <button
+                                                        onClick={importCode}
+                                                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                                                    >
+                                                        นำเข้าโค้ด
+                                                    </button>
                                                 </div>
                                             </div>
 
