@@ -297,10 +297,10 @@ export default function EditV2Page() {
 
     function openEditModal(index) {
         const block = profile.blocks[index];
-        // header เป็น property ของ block แล้ว ไม่ต้องหาจาก block ก่อนหน้า
-        // ทำ deep copy เพื่อไม่ให้แก้ไข reference เดิม
+        // header is stored directly as props in block.header
+        // Wrap it in a structure for consistent editing
         const headerData = block.header
-            ? JSON.parse(JSON.stringify(block.header))
+            ? { props: JSON.parse(JSON.stringify(block.header)) }
             : null;
 
         setEditModal({
@@ -337,12 +337,13 @@ export default function EditV2Page() {
     function saveBlockEdit() {
         if (editModal.type === "block" && editModal.blockIndex !== null) {
             const newBlocks = [...profile.blocks];
-            // บันทึก block พร้อมกับ header (ถ้ามี)
+            // Save block with header (if exists)
             const updatedBlock = { ...editModal.blockData };
-            if (editModal.headerData) {
-                updatedBlock.header = editModal.headerData;
+            if (editModal.headerData && editModal.headerData.props) {
+                // Store header props directly (not wrapped)
+                updatedBlock.header = editModal.headerData.props;
             } else {
-                delete updatedBlock.header; // ลบ header ถ้าไม่มี
+                delete updatedBlock.header; // Remove header if not present
             }
             newBlocks[editModal.blockIndex] = updatedBlock;
 

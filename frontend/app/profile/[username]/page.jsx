@@ -152,10 +152,10 @@ export default function UserProfile() {
                 style={buildOuterBg(theme)}
                 aria-hidden
             />
-            <div className="relative z-10 min-h-screen p-6">
+            <div className="relative z-10 min-h-screen p-4 sm:p-6">
                 <div className="max-w-3xl mx-auto">
                     <div
-                        className="rounded-2xl border p-5"
+                        className="rounded-2xl border p-4 sm:p-5"
                         style={{
                             borderColor: (theme?.textColor || "#f3f4f6") + "33",
                         }}
@@ -165,19 +165,19 @@ export default function UserProfile() {
                             style={buildInnerBg(theme)}
                         >
                             <div
-                                className="relative rounded-3xl border border-white/10 p-6 md:p-8 shadow-2xl backdrop-blur-md bg-white/[0.02] hover:border-white/20 transition-all duration-300"
+                                className="relative rounded-3xl border border-white/10 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-md bg-white/[0.02] hover:border-white/20 transition-all duration-300"
                                 style={{ fontFamily }}
                             >
                                 {/* Share button top-right */}
                                 <button
                                     onClick={handleShare}
-                                    className="absolute top-3 right-3 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
+                                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
                                     aria-label="แชร์โปรไฟล์นี้"
                                     title="แชร์โปรไฟล์นี้"
                                 >
-                                    <MdShare className="w-5 h-5" />
+                                    <MdShare className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </button>
-                                <div className="flex flex-col sm:flex-row sm:items-start gap-5 mb-6">
+                                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5 mb-6">
                                     {/* Avatar with frame options */}
                                     {profile.avatarUrl ? (
                                         (() => {
@@ -185,7 +185,7 @@ export default function UserProfile() {
                                                 profile.avatarFrame || "none";
                                             if (frame === "gradient") {
                                                 return (
-                                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] shadow-xl">
+                                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] shadow-xl mx-auto sm:mx-0">
                                                         <img
                                                             src={
                                                                 profile.avatarUrl
@@ -208,16 +208,16 @@ export default function UserProfile() {
                                                 <img
                                                     src={profile.avatarUrl}
                                                     alt="avatar"
-                                                    className={`w-20 h-20 rounded-full object-cover ${ringClass}`}
+                                                    className={`w-20 h-20 rounded-full object-cover mx-auto sm:mx-0 ${ringClass}`}
                                                 />
                                             );
                                         })()
                                     ) : (
-                                        <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20" />
+                                        <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20 mx-auto sm:mx-0" />
                                     )}
-                                    <div className="flex-1">
+                                    <div className="flex-1 text-center sm:text-left">
                                         <div
-                                            className="text-2xl font-bold mb-1"
+                                            className="text-xl sm:text-2xl font-bold mb-1"
                                             style={{ color: nameColor }}
                                         >
                                             {profile.displayName}
