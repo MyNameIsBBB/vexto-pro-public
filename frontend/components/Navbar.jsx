@@ -7,17 +7,22 @@ import { FiLogOut, FiMenu, FiX } from "react-icons/fi";
 import { useState } from "react";
 
 export default function Navbar() {
-    const { isAuthenticated, profile, user, isAdmin, logout } = useAuth();
+    const { isAuthenticated, profile, user, isAdmin, logout, loading } = useAuth();
     const router = useRouter();
     const proActive = Boolean(isAdmin || user?.isPro);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+    // Get username for profile link
+    const profileUsername = user?.username || profile?.username;
+
     // Debug logging
     console.log("🔍 Navbar Debug:", {
+        loading,
         isAuthenticated,
         username: user?.username,
         profileUsername: profile?.username,
         slug: profile?.slug,
+        finalUsername: profileUsername,
     });
 
     const handleLogout = () => {
@@ -73,14 +78,10 @@ export default function Navbar() {
                             </Link>
                             {/* Compact profile cluster */}
                             <div className="flex items-center gap-2 ml-1">
-                                {/* Avatar */}
-                                {(user?.username || profile?.username) && (
+                                {/* Avatar - only show if we have username (loaded) */}
+                                {!loading && profileUsername && (
                                     <Link
-                                        href={`/profile/${
-                                            user?.username ||
-                                            profile?.username ||
-                                            profile?.slug
-                                        }`}
+                                        href={`/profile/${profileUsername}`}
                                         className="relative inline-flex items-center justify-center w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:border-white/40 transition-colors"
                                         title="โปรไฟล์ของฉัน"
                                     >
@@ -187,13 +188,9 @@ export default function Navbar() {
                             >
                                 แก้ไขโปรไฟล์
                             </Link>
-                            {(user?.username || profile?.username) && (
+                            {!loading && profileUsername && (
                                 <Link
-                                    href={`/profile/${
-                                        user?.username ||
-                                        profile?.username ||
-                                        profile?.slug
-                                    }`}
+                                    href={`/profile/${profileUsername}`}
                                     className="flex items-center gap-3 py-2 px-3 hover:bg-white/10 rounded-lg transition-colors text-white"
                                     onClick={closeMobileMenu}
                                 >
