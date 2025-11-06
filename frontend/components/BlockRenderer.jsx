@@ -37,14 +37,34 @@ export default function BlockRenderer({
     const quoteAccent = el.quoteAccent || theme?.accent || "#22d3ee";
     const buttonBg = el.buttonBg || theme?.primary || "#7c3aed";
 
+    // Expand inline headers: if a block has header in either b.header or b.props.header,
+    // insert a synthetic 'header' block before it. Avoid duplicate headers in a row.
+    const expandedBlocks = [];
+    blocks.forEach((b, idx) => {
+        const hdr = b?.header || b?.props?.header;
+        if (hdr && hdr.title) {
+            const prev = expandedBlocks[expandedBlocks.length - 1];
+            const sameAsPrevHeader =
+                prev && prev.type === "header" && prev?.props?.title === hdr.title;
+            if (!sameAsPrevHeader) {
+                expandedBlocks.push({
+                    id: b?.id ? `${b.id}-hdr` : `hdr-${idx}`,
+                    type: "header",
+                    props: hdr,
+                });
+            }
+        }
+        expandedBlocks.push(b);
+    });
+
     // Group consecutive link/button blocks
     const groupedBlocks = [];
     let currentGroup = [];
-    blocks.forEach((b, idx) => {
+    expandedBlocks.forEach((b, idx) => {
         const t = b.type;
         if (t === "link" || t === "button") {
             currentGroup.push(b);
-            const nextType = blocks[idx + 1]?.type;
+            const nextType = expandedBlocks[idx + 1]?.type;
             if (!nextType || (nextType !== "link" && nextType !== "button")) {
                 if (currentGroup.length > 1)
                     groupedBlocks.push({
@@ -1765,14 +1785,6 @@ export default function BlockRenderer({
 
                     return (
                         <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {items.map((item, i) => (
                                     <div
@@ -1840,14 +1852,6 @@ export default function BlockRenderer({
 
                     return (
                         <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4 text-center"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {items.map((item, i) => (
                                     <div
@@ -1927,14 +1931,6 @@ export default function BlockRenderer({
 
                     return (
                         <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4 text-center"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {items.map((item, i) => (
                                     <div
@@ -2031,14 +2027,6 @@ export default function BlockRenderer({
 
                     return (
                         <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4 text-center"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {items.map((item, i) => (
                                     <div
@@ -2080,14 +2068,6 @@ export default function BlockRenderer({
 
                     return (
                         <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
                             <div className="space-y-6">
                                 {items.map((item, i) => (
                                     <div key={i} className="flex gap-4">

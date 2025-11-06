@@ -191,6 +191,11 @@ export default function EditV2Page() {
         (async () => {
             try {
                 const data = await api.get("/profiles/me/info");
+                // Bring any saved header (stored under props.header in DB) up to block.header for editing/preview
+                const normalizedBlocks = (data.blocks || []).map((b) => {
+                    const header = b?.header || b?.props?.header || null;
+                    return header ? { ...b, header } : b;
+                });
                 setProfile((prev) => ({
                     ...prev,
                     displayName: data.displayName || prev.displayName,
@@ -202,7 +207,7 @@ export default function EditV2Page() {
                         ...prev.theme,
                         ...data.theme,
                     },
-                    blocks: data.blocks || [],
+                    blocks: normalizedBlocks,
                 }));
 
                 // Load username
@@ -454,6 +459,16 @@ export default function EditV2Page() {
     }
 
     function applyThemePreset(preset) {
+        const outer = preset.outerBackground || preset.background;
+        const textOverrides = {
+            name: preset.textColor,
+            header: preset.accent || preset.textColor,
+            body: preset.textColor,
+            role: preset.accent || preset.textColor,
+            link: preset.accent || preset.textColor,
+            muted: preset.textColor,
+            buttonLabel: "",
+        };
         setProfile({
             ...profile,
             theme: {
@@ -461,7 +476,12 @@ export default function EditV2Page() {
                 primary: preset.primary,
                 accent: preset.accent,
                 background: preset.background,
+                outerBackground: outer,
                 textColor: preset.textColor,
+                textOverrides: {
+                    ...profile.theme?.textOverrides,
+                    ...textOverrides,
+                },
             },
         });
     }
@@ -1338,6 +1358,32 @@ export default function EditV2Page() {
                                                                 theme: {
                                                                     ...profile.theme,
                                                                     background:
+                                                                        e.target
+                                                                            .value,
+                                                                },
+                                                            })
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                        สีพื้นหลังด้านนอก (Outer)
+                                                    </label>
+                                                    <input
+                                                        type="color"
+                                                        className="w-full h-10 rounded cursor-pointer"
+                                                        value={
+                                                            profile.theme
+                                                                .outerBackground ||
+                                                            profile.theme
+                                                                .background
+                                                        }
+                                                        onChange={(e) =>
+                                                            setProfile({
+                                                                ...profile,
+                                                                theme: {
+                                                                    ...profile.theme,
+                                                                    outerBackground:
                                                                         e.target
                                                                             .value,
                                                                 },
