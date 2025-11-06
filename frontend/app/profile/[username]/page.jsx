@@ -19,9 +19,18 @@ export default function UserProfile() {
         async function fetchProfile() {
             try {
                 setLoading(true);
-                const apiUrl =
-                    process.env.NEXT_PUBLIC_API_BASE_URL ||
-                    "http://localhost:5001/api";
+                // Resolve API base: prefer env, else use '/api' in production, fallback to localhost in dev
+                const apiUrl = (() => {
+                    if (process.env.NEXT_PUBLIC_API_BASE_URL)
+                        return process.env.NEXT_PUBLIC_API_BASE_URL;
+                    if (typeof window !== "undefined") {
+                        const host = window.location.hostname;
+                        const isLocal =
+                            host === "localhost" || host === "127.0.0.1";
+                        return isLocal ? "http://localhost:5001/api" : "/api";
+                    }
+                    return "http://localhost:5001/api";
+                })();
                 
                 const response = await fetch(`${apiUrl}/profiles/${username}`);
 
