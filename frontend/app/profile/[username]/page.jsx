@@ -11,8 +11,6 @@ export default function UserProfile() {
     const params = useParams();
     const username = params.username;
 
-    console.log("🎯 Profile Page Rendered - Username:", username);
-
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -25,12 +23,7 @@ export default function UserProfile() {
                     process.env.NEXT_PUBLIC_API_BASE_URL ||
                     "http://localhost:5001/api";
                 
-                console.log("Fetching profile for username:", username);
-                console.log("API URL:", `${apiUrl}/profiles/${username}`);
-                
                 const response = await fetch(`${apiUrl}/profiles/${username}`);
-                
-                console.log("Response status:", response.status);
 
                 if (!response.ok) {
                     if (response.status === 404) {
@@ -40,7 +33,6 @@ export default function UserProfile() {
                 }
 
                 const data = await response.json();
-                console.log("Profile data loaded:", data);
                 setProfile(data);
                 setError(null);
             } catch (err) {
@@ -51,11 +43,9 @@ export default function UserProfile() {
             }
         }
 
-        console.log("Username from params:", username);
         if (username) {
             fetchProfile();
         } else {
-            console.warn("No username provided, skipping fetch");
             setLoading(false);
         }
     }, [username]);

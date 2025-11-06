@@ -33,8 +33,6 @@ export function AuthProvider({ children }) {
                 isPro: !!(data?.user?.isPro || data?.isPro),
             };
             setUser(userData);
-            console.log("✅ Loaded user data:", userData);
-            console.log("📋 Full profile data:", data);
             
             // Admin allowlist from ENV (comma separated usernames)
             const adminCsv = process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "";

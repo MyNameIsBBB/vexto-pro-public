@@ -15,16 +15,6 @@ export default function Navbar() {
     // Get username for profile link
     const profileUsername = user?.username || profile?.username;
 
-    // Debug logging
-    console.log("🔍 Navbar Debug:", {
-        loading,
-        isAuthenticated,
-        username: user?.username,
-        profileUsername: profile?.username,
-        slug: profile?.slug,
-        finalUsername: profileUsername,
-    });
-
     const handleLogout = () => {
         logout();
         setMobileMenuOpen(false);
@@ -80,13 +70,12 @@ export default function Navbar() {
                             <div className="flex items-center gap-2 ml-1">
                                 {/* Avatar - only show if we have username (loaded) */}
                                 {!loading && profileUsername && (
-                                    <Link
-                                        href={`/profile/${profileUsername}`}
-                                        className="relative inline-flex items-center justify-center w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:border-white/40 transition-colors"
-                                        title="โปรไฟล์ของฉัน"
+                                    <button
                                         onClick={() => {
-                                            console.log("🔗 Clicking profile link:", `/profile/${profileUsername}`);
+                                            window.location.href = `/profile/${profileUsername}`;
                                         }}
+                                        className="relative inline-flex items-center justify-center w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:border-white/40 transition-colors cursor-pointer"
+                                        title="โปรไฟล์ของฉัน"
                                     >
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
@@ -102,7 +91,7 @@ export default function Navbar() {
                                             alt="avatar"
                                             className="w-full h-full object-cover"
                                         />
-                                    </Link>
+                                    </button>
                                 )}
                                 {/* PRO badge next to avatar */}
                                 {proActive && (
@@ -192,13 +181,11 @@ export default function Navbar() {
                                 แก้ไขโปรไฟล์
                             </Link>
                             {!loading && profileUsername && (
-                                <Link
-                                    href={`/profile/${profileUsername}`}
-                                    className="flex items-center gap-3 py-2 px-3 hover:bg-white/10 rounded-lg transition-colors text-white"
+                                <button
                                     onClick={() => {
-                                        console.log("🔗 Clicking mobile profile link:", `/profile/${profileUsername}`);
-                                        closeMobileMenu();
+                                        window.location.href = `/profile/${profileUsername}`;
                                     }}
+                                    className="flex items-center gap-3 py-2 px-3 hover:bg-white/10 rounded-lg transition-colors text-white w-full text-left cursor-pointer"
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
@@ -220,7 +207,7 @@ export default function Navbar() {
                                             PRO
                                         </span>
                                     )}
-                                </Link>
+                                </button>
                             )}
                             <button
                                 onClick={handleLogout}
