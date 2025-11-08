@@ -150,7 +150,7 @@ router.get("/discord/start", async (req, res) => {
     try {
         const clientId = process.env.DISCORD_CLIENT_ID;
         const redirectUri =
-            req.query.redirect_uri || process.env.DISCORD_REDIRECT_URI;
+            req.query.redirect_uri || process.env.DISCORD_FRONTEND_REDIRECT;
         const scope = encodeURIComponent("identify email");
         const state = encodeURIComponent(req.query.state || "");
         if (!clientId || !redirectUri) {
@@ -313,7 +313,7 @@ router.get("/google/start", async (req, res) => {
     try {
         const clientId = process.env.GOOGLE_CLIENT_ID;
         const redirectUri =
-            req.query.redirect_uri || process.env.GOOGLE_REDIRECT_URI;
+            req.query.redirect_uri || process.env.GOOGLE_FRONTEND_REDIRECT;
 
         if (!clientId || !redirectUri) {
             return res
