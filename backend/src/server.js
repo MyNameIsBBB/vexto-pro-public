@@ -11,6 +11,7 @@ const feedbackRoutes = require("./routes/feedback");
 const paymentRoutes = require("./routes/payment");
 const creatorsRoutes = require("./routes/creators");
 const adminRoutes = require("./routes/admin");
+const statsRoutes = require("./routes/stats");
 const {
     apiLimiter,
     authLimiter,
@@ -69,6 +70,7 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/creators", creatorsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/stats", statsRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {

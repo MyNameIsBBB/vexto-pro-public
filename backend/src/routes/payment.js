@@ -10,6 +10,20 @@ function requireEnv(name) {
     return v;
 }
 
+// Discord webhook helper
+async function sendDiscordWebhook(webhookUrl, embed) {
+    if (!webhookUrl) return;
+    try {
+        await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ embeds: [embed] }),
+        });
+    } catch (error) {
+        console.error("Discord webhook error:", error);
+    }
+}
+
 // Helper function to create PromptPay QR with reference data
 function createPromptPayQR(phoneNumber, amount, ref) {
     const generatePayload = require("promptpay-qr");
@@ -314,6 +328,55 @@ router.post(
                                 "Auto-granted permissions for user:",
                                 metadata.userId
                             );
+
+                            // Send Discord notification
+                            const webhookUrl =
+                                process.env.DISCORD_PAYMENT_WEBHOOK_URL;
+                            if (webhookUrl) {
+                                const embed = {
+                                    title: "💰 การชำระเงินสำเร็จ",
+                                    color: 0x00ff00,
+                                    fields: [
+                                        {
+                                            name: "ผู้ใช้",
+                                            value:
+                                                user.username || user.email,
+                                            inline: true,
+                                        },
+                                        {
+                                            name: "จำนวนเงิน",
+                                            value: `฿${
+                                                paymentIntent.amount / 100
+                                            }`,
+                                            inline: true,
+                                        },
+                                        {
+                                            name: "ประเภท",
+                                            value:
+                                                metadata.grantType === "pro"
+                                                    ? `Pro (${
+                                                          metadata.proPlan ||
+                                                          "monthly"
+                                                      })`
+                                                    : metadata.grantType ===
+                                                      "item"
+                                                    ? `Item: ${metadata.itemId}`
+                                                    : "อื่นๆ",
+                                            inline: true,
+                                        },
+                                        {
+                                            name: "Payment ID",
+                                            value: paymentIntent.id,
+                                            inline: false,
+                                        },
+                                    ],
+                                    timestamp: new Date().toISOString(),
+                                    footer: {
+                                        text: "Vexto Payment System",
+                                    },
+                                };
+                                await sendDiscordWebhook(webhookUrl, embed);
+                            }
                         }
                     } catch (error) {
                         console.error(

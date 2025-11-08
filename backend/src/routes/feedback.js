@@ -3,6 +3,20 @@ const nodemailer = require("nodemailer");
 
 const router = express.Router();
 
+// Discord webhook helper
+async function sendDiscordWebhook(webhookUrl, embed) {
+    if (!webhookUrl) return;
+    try {
+        await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ embeds: [embed] }),
+        });
+    } catch (error) {
+        console.error("Discord webhook error:", error);
+    }
+}
+
 // Helper to build transporter from ENV or fallback to json transport for dev
 function buildTransporter() {
     const host = process.env.EMAIL_HOST;
@@ -90,6 +104,53 @@ router.post("/", async (req, res) => {
 
         const info = await transporter.sendMail(mailOptions);
         const sent = Boolean(info?.messageId || info?.envelope || info);
+
+        // Send Discord notification
+        const webhookUrl = process.env.DISCORD_FEEDBACK_WEBHOOK_URL;
+        if (webhookUrl) {
+            const stars = "⭐"
+                .repeat(Math.max(0, Math.min(5, ratingNum)))
+                .padEnd(5, "☆");
+            const embed = {
+                title: "📝 Feedback ใหม่",
+                color: ratingNum >= 4 ? 0x00ff00 : ratingNum >= 3 ? 0xffaa00 : 0xff0000,
+                fields: [
+                    {
+                        name: "ผู้ส่ง",
+                        value: `${name}`,
+                        inline: true,
+                    },
+                    {
+                        name: "อีเมล",
+                        value: email,
+                        inline: true,
+                    },
+                    {
+                        name: "คะแนน",
+                        value: `${stars} (${ratingNum}/5)`,
+                        inline: true,
+                    },
+                    {
+                        name: "ความคิดเห็น",
+                        value: comments.slice(0, 1000),
+                        inline: false,
+                    },
+                ],
+                timestamp: new Date().toISOString(),
+                footer: {
+                    text: `ติดต่อกลับ: ${allowContact ? "ได้" : "ไม่ได้"}`,
+                },
+            };
+            if (improvements) {
+                embed.fields.push({
+                    name: "ข้อเสนอแนะ",
+                    value: improvements.slice(0, 1000),
+                    inline: false,
+                });
+            }
+            await sendDiscordWebhook(webhookUrl, embed);
+        }
+
         return res.json({ ok: true, sent });
     } catch (e) {
         console.error("Feedback send error", e);

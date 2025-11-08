@@ -10,9 +10,7 @@ export default function ProPage() {
 
     // Check if user has active Pro
     const hasActivePro =
-        user?.isPro &&
-        user?.proExpiry &&
-        new Date(user.proExpiry) > new Date();
+        user?.isPro && user?.proExpiry && new Date(user.proExpiry) > new Date();
 
     const daysLeft = hasActivePro
         ? Math.ceil(
@@ -93,14 +91,16 @@ export default function ProPage() {
                                 หมดอายุในอีก {daysLeft} วัน
                             </p>
                             <p className="text-sm text-white/50 mt-2">
-                                ({new Date(user.proExpiry).toLocaleDateString(
+                                (
+                                {new Date(user.proExpiry).toLocaleDateString(
                                     "th-TH",
                                     {
                                         year: "numeric",
                                         month: "long",
                                         day: "numeric",
                                     }
-                                )})
+                                )}
+                                )
                             </p>
                         </div>
                     )}
@@ -198,7 +198,9 @@ export default function ProPage() {
                                 }
                             }}
                         >
-                            {hasActivePro ? "มี Pro อยู่แล้ว" : "เริ่มใช้งาน Pro"}
+                            {hasActivePro
+                                ? "มี Pro อยู่แล้ว"
+                                : "เริ่มใช้งาน Pro"}
                         </Link>
                     </div>
 

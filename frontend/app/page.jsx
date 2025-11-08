@@ -1,8 +1,30 @@
+"use client";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 
+const BASE_URL =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001/api";
+
 export default function HomePage() {
+    const [stats, setStats] = useState({
+        users: 0,
+        profiles: 0,
+        responseTime: "< 1 วินาที",
+    });
+
+    useEffect(() => {
+        fetch(`${BASE_URL}/stats`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.users !== undefined) {
+                    setStats(data);
+                }
+            })
+            .catch((err) => console.error("Failed to load stats:", err));
+    }, []);
+
     return (
         <>
             <Navbar />
@@ -94,17 +116,17 @@ export default function HomePage() {
                     {[
                         {
                             label: "ผู้ใช้งาน",
-                            value: "500+",
+                            value: stats.users > 0 ? stats.users.toLocaleString() : "0",
                             sub: "และเพิ่มขึ้นทุกวัน",
                         },
                         {
                             label: "โปรไฟล์ที่สร้าง",
-                            value: "1,200+",
+                            value: stats.profiles > 0 ? stats.profiles.toLocaleString() : "0",
                             sub: "ครีเอเตอร์ ร้านค้า และบุคคลทั่วไป",
                         },
                         {
                             label: "เวลาตอบสนอง",
-                            value: "< 1 วินาที",
+                            value: stats.responseTime,
                             sub: "โหลดเร็ว ใช้งานลื่นไหล",
                         },
                     ].map((s) => (
@@ -243,7 +265,7 @@ export default function HomePage() {
                                         </div>
                                         <div>
                                             <div className="text-white font-semibold leading-tight">
-                                                NOVAstream
+                                                peeratus-streamer
                                             </div>
                                             <div className="text-xs text-white/70">
                                                 Valorant • Variety
@@ -264,7 +286,7 @@ export default function HomePage() {
                                                 ลิงก์หลัก
                                             </div>
                                             <div className="mt-1 font-semibold">
-                                                twitch.tv/NOVAstream
+                                                twitch.tv/peeratus
                                             </div>
                                         </div>
                                         <div className="rounded-xl2 border border-white/15 bg-white/5 p-3">
@@ -280,7 +302,7 @@ export default function HomePage() {
                                                 เกี่ยวกับ
                                             </div>
                                             <div className="mt-1 text-sm">
-                                                สวัสดี! ผม NOVA สตรีมเกมแบบสนุก
+                                                สวัสดี! ผม peeratus สตรีมเกมแบบสนุก
                                                 ๆ ทุกคืนศุกร์-อาทิตย์
                                             </div>
                                         </div>
