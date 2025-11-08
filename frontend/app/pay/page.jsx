@@ -13,7 +13,7 @@ export default function PayPage() {
     const router = useRouter();
     const grantParam = params.get("grant") || ""; // e.g., pro or item:glow-frame
     const returnUrl = params.get("returnUrl") || "/";
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     const [amount, setAmount] = useState(initialAmount);
     const [modalOpen, setModalOpen] = useState(false);
@@ -39,6 +39,23 @@ export default function PayPage() {
                 else if (grantParam.startsWith("item:")) {
                     grantType = "item";
                     itemId = grantParam.slice(5);
+                }
+            }
+
+            // Block Pro purchase if user already has active Pro
+            if (grantType === "pro" && user) {
+                if (user.isPro && user.proExpiry) {
+                    const now = new Date();
+                    const expiry = new Date(user.proExpiry);
+                    if (expiry > now) {
+                        const daysLeft = Math.ceil(
+                            (expiry - now) / (1000 * 60 * 60 * 24)
+                        );
+                        setError(
+                            `คุณมี Pro อยู่แล้ว หมดอายุในอีก ${daysLeft} วัน`
+                        );
+                        return;
+                    }
                 }
             }
 

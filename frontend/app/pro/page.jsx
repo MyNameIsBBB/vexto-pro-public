@@ -6,7 +6,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { MdCheck } from "react-icons/md";
 
 export default function ProPage() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
+
+    // Check if user has active Pro
+    const hasActivePro =
+        user?.isPro &&
+        user?.proExpiry &&
+        new Date(user.proExpiry) > new Date();
+
+    const daysLeft = hasActivePro
+        ? Math.ceil(
+              (new Date(user.proExpiry) - new Date()) / (1000 * 60 * 60 * 24)
+          )
+        : 0;
 
     return (
         <main className="pb-20">
@@ -70,6 +82,29 @@ export default function ProPage() {
 
                 {/* Pricing */}
                 <div className="mt-12 grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    {/* Show active Pro banner if user has Pro */}
+                    {hasActivePro && (
+                        <div className="md:col-span-3 rounded-2xl border border-green-500/30 bg-green-500/10 p-6 text-center">
+                            <div className="text-2xl mb-2">✅</div>
+                            <h3 className="text-xl font-bold mb-2">
+                                คุณมี Pro อยู่แล้ว!
+                            </h3>
+                            <p className="text-white/70">
+                                หมดอายุในอีก {daysLeft} วัน
+                            </p>
+                            <p className="text-sm text-white/50 mt-2">
+                                ({new Date(user.proExpiry).toLocaleDateString(
+                                    "th-TH",
+                                    {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                    }
+                                )})
+                            </p>
+                        </div>
+                    )}
+
                     {/* Free Plan */}
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
                         <div className="text-center mb-6">
@@ -141,15 +176,29 @@ export default function ProPage() {
                         </ul>
                         <Link
                             href={
-                                isAuthenticated
-                                    ? "/pay?amount=99&grant=pro-monthly&returnUrl=%2Fpro"
+                                hasActivePro
+                                    ? "#"
+                                    : isAuthenticated
+                                    ? "/pay?amount=99&grant=pro&returnUrl=%2Fpro"
                                     : `/login?returnUrl=${encodeURIComponent(
-                                          "/pay?amount=99&grant=pro-monthly"
+                                          "/pay?amount=99&grant=pro"
                                       )}`
                             }
-                            className="block text-center px-5 py-3 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                            className={`block text-center px-5 py-3 rounded-xl text-sm font-bold transition-opacity ${
+                                hasActivePro
+                                    ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
+                                    : "bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] text-white hover:opacity-90"
+                            }`}
+                            onClick={(e) => {
+                                if (hasActivePro) {
+                                    e.preventDefault();
+                                    alert(
+                                        `คุณมี Pro อยู่แล้ว หมดอายุในอีก ${daysLeft} วัน`
+                                    );
+                                }
+                            }}
                         >
-                            เริ่มใช้งาน Pro
+                            {hasActivePro ? "มี Pro อยู่แล้ว" : "เริ่มใช้งาน Pro"}
                         </Link>
                     </div>
 
@@ -194,15 +243,31 @@ export default function ProPage() {
                         </ul>
                         <Link
                             href={
-                                isAuthenticated
-                                    ? "/pay?amount=999&grant=pro-yearly&returnUrl=%2Fpro"
+                                hasActivePro
+                                    ? "#"
+                                    : isAuthenticated
+                                    ? "/pay?amount=999&grant=pro&returnUrl=%2Fpro"
                                     : `/login?returnUrl=${encodeURIComponent(
-                                          "/pay?amount=999&grant=pro-yearly"
+                                          "/pay?amount=999&grant=pro"
                                       )}`
                             }
-                            className="block text-center px-5 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-gray-900 text-sm font-bold transition-colors"
+                            className={`block text-center px-5 py-3 rounded-xl text-sm font-bold transition-colors ${
+                                hasActivePro
+                                    ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
+                                    : "bg-yellow-500 hover:bg-yellow-400 text-gray-900"
+                            }`}
+                            onClick={(e) => {
+                                if (hasActivePro) {
+                                    e.preventDefault();
+                                    alert(
+                                        `คุณมี Pro อยู่แล้ว หมดอายุในอีก ${daysLeft} วัน`
+                                    );
+                                }
+                            }}
                         >
-                            เริ่มใช้งาน Pro (รายปี)
+                            {hasActivePro
+                                ? "มี Pro อยู่แล้ว"
+                                : "เริ่มใช้งาน Pro (รายปี)"}
                         </Link>
                     </div>
                 </div>
