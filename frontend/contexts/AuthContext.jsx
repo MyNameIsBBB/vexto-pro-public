@@ -31,9 +31,10 @@ export function AuthProvider({ children }) {
                 username: data?.user?.username || data.username,
                 email: data?.user?.email,
                 isPro: !!(data?.user?.isPro || data?.isPro),
+                proExpiry: data?.user?.proExpiry || data?.proExpiry || null,
             };
             setUser(userData);
-            
+
             // Admin allowlist from ENV (comma separated usernames)
             const adminCsv = process.env.NEXT_PUBLIC_ADMIN_USERNAMES || "";
             const adminList = adminCsv

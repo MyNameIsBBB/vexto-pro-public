@@ -36,6 +36,23 @@ router.post("/create", auth, async (req, res, next) => {
                 .json({ error: "amount ต้องเป็นจำนวนเงินที่ถูกต้อง" });
         }
 
+        // Block Pro purchase if user already has active Pro
+        if (grantType === "pro") {
+            const user = await User.findById(req.userId);
+            if (user && user.isPro && user.proExpiry) {
+                const now = new Date();
+                if (new Date(user.proExpiry) > now) {
+                    const daysLeft = Math.ceil(
+                        (new Date(user.proExpiry) - now) / (1000 * 60 * 60 * 24)
+                    );
+                    return res.status(400).json({
+                        error: `คุณมี Pro อยู่แล้ว หมดอายุในอีก ${daysLeft} วัน`,
+                        proExpiry: user.proExpiry,
+                    });
+                }
+            }
+        }
+
         // Determine plan mapping (allow client to send proPlan or infer from amount)
         let resolvedPlan = null;
         if (grantType === "pro") {
@@ -154,7 +171,8 @@ router.post("/verify", auth, async (req, res, next) => {
                         : "monthly";
                     const now = Date.now();
                     const baseStart =
-                        user.proExpiry && new Date(user.proExpiry).getTime() > now
+                        user.proExpiry &&
+                        new Date(user.proExpiry).getTime() > now
                             ? new Date(user.proExpiry).getTime()
                             : now;
                     const durationMs =
@@ -242,19 +260,24 @@ router.post(
                             if (metadata.grantType === "pro") {
                                 user.isPro = true;
                                 const plan = metadata.proPlan || "monthly";
-                                user.proTier = ["monthly", "yearly"].includes(plan)
+                                user.proTier = ["monthly", "yearly"].includes(
+                                    plan
+                                )
                                     ? plan
                                     : "monthly";
                                 const now = Date.now();
                                 const baseStart =
-                                    user.proExpiry && new Date(user.proExpiry).getTime() > now
+                                    user.proExpiry &&
+                                    new Date(user.proExpiry).getTime() > now
                                         ? new Date(user.proExpiry).getTime()
                                         : now;
                                 const durationMs =
                                     user.proTier === "yearly"
                                         ? 365 * 24 * 60 * 60 * 1000
                                         : 30 * 24 * 60 * 60 * 1000;
-                                user.proExpiry = new Date(baseStart + durationMs);
+                                user.proExpiry = new Date(
+                                    baseStart + durationMs
+                                );
                             } else if (
                                 metadata.grantType === "item" &&
                                 metadata.itemId &&

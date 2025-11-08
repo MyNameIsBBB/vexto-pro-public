@@ -82,7 +82,11 @@ export default function AdminPage() {
                 isPro: editData.isPro,
                 isAdmin: editData.isAdmin,
                 proTier: editData.proTier,
-                proExpiry: editData.proExpiry || null,
+                // Admin no expiry; pro tier requires expiry
+                proExpiry:
+                    editData.isAdmin || editData.proTier === "free"
+                        ? null
+                        : editData.proExpiry || null,
             };
 
             await api.put(`/admin/users/${editData.userId}`, payload);
@@ -469,30 +473,46 @@ export default function AdminPage() {
                                             proTier: e.target.value,
                                         })
                                     }
-                                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                                    disabled={editData.isAdmin}
+                                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500 disabled:opacity-50"
                                 >
                                     <option value="free">Free</option>
-                                    <option value="basic">Basic</option>
-                                    <option value="premium">Premium</option>
+                                    <option value="monthly">
+                                        Pro Monthly (30 วัน)
+                                    </option>
+                                    <option value="yearly">
+                                        Pro Yearly (365 วัน)
+                                    </option>
                                 </select>
+                                {editData.isAdmin && (
+                                    <p className="text-xs text-white/50 mt-1">
+                                        Admin ไม่มีหมดอายุ
+                                    </p>
+                                )}
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    วันหมดอายุ PRO
-                                </label>
-                                <input
-                                    type="date"
-                                    value={editData.proExpiry}
-                                    onChange={(e) =>
-                                        setEditData({
-                                            ...editData,
-                                            proExpiry: e.target.value,
-                                        })
-                                    }
-                                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
-                                />
-                            </div>
+                            {!editData.isAdmin &&
+                                editData.proTier !== "free" && (
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">
+                                            วันหมดอายุ PRO
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={editData.proExpiry}
+                                            onChange={(e) =>
+                                                setEditData({
+                                                    ...editData,
+                                                    proExpiry: e.target.value,
+                                                })
+                                            }
+                                            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                                        />
+                                        <p className="text-xs text-white/50 mt-1">
+                                            ระบุวันหมดอายุสำหรับ Pro
+                                        </p>
+                                    </div>
+                                )}
                         </div>
 
                         <div className="flex gap-3 mt-6">

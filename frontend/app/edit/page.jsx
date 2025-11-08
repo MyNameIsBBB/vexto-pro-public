@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import ProExpiryBanner from "@/components/ProExpiryBanner";
 import {
     MdEdit,
     MdAdd,
@@ -557,7 +558,10 @@ export default function EditV2Page() {
             return;
         }
         if (data.kind === "theme" && data.theme) {
-            setProfile((prev) => ({ ...prev, theme: { ...prev.theme, ...data.theme } }));
+            setProfile((prev) => ({
+                ...prev,
+                theme: { ...prev.theme, ...data.theme },
+            }));
             notify("success", "นำเข้าธีมแล้ว");
         } else if (data.kind === "profile") {
             const confirmReplace = confirm(
@@ -571,7 +575,9 @@ export default function EditV2Page() {
                 displayName: data.displayName || prev.displayName,
                 bio: data.bio || prev.bio,
                 avatarUrl: data.avatarUrl || prev.avatarUrl,
-                socials: Array.isArray(data.socials) ? data.socials : prev.socials,
+                socials: Array.isArray(data.socials)
+                    ? data.socials
+                    : prev.socials,
             }));
             notify("success", "นำเข้าโปรไฟล์แล้ว");
         } else {
@@ -675,6 +681,9 @@ export default function EditV2Page() {
                             ปรับแต่งโปรไฟล์ของคุณให้โดดเด่นและน่าสนใจ
                         </p>
                     </div>
+
+                    {/* Pro Expiry Banner */}
+                    <ProExpiryBanner />
 
                     {/* Steps Guide */}
                     <div className="mb-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 rounded-xl p-6">
@@ -874,7 +883,9 @@ export default function EditV2Page() {
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
                                                         <button
                                                             onClick={() =>
-                                                                openEditModal(index)
+                                                                openEditModal(
+                                                                    index
+                                                                )
                                                             }
                                                             className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
                                                             title="แก้ไข"
@@ -883,7 +894,9 @@ export default function EditV2Page() {
                                                         </button>
                                                         <button
                                                             onClick={() =>
-                                                                deleteBlock(index)
+                                                                deleteBlock(
+                                                                    index
+                                                                )
                                                             }
                                                             className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
                                                             title="ลบ"
@@ -1394,13 +1407,17 @@ export default function EditV2Page() {
                                                 </label>
                                                 <div className="flex flex-wrap gap-2">
                                                     <button
-                                                        onClick={exportThemeCode}
+                                                        onClick={
+                                                            exportThemeCode
+                                                        }
                                                         className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
                                                     >
                                                         คัดลอกโค้ดธีม
                                                     </button>
                                                     <button
-                                                        onClick={exportProfileCode}
+                                                        onClick={
+                                                            exportProfileCode
+                                                        }
                                                         className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
                                                     >
                                                         คัดลอกโค้ดโปรไฟล์
@@ -1488,7 +1505,8 @@ export default function EditV2Page() {
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                        สีพื้นหลังด้านนอก (Outer)
+                                                        สีพื้นหลังด้านนอก
+                                                        (Outer)
                                                     </label>
                                                     <input
                                                         type="color"
