@@ -27,13 +27,26 @@ function createPromptPayQR(phoneNumber, amount, ref) {
 // Create Stripe Payment Intent with PromptPay
 router.post("/create", auth, async (req, res, next) => {
     try {
-        const { amount, grantType, itemId } = req.body || {};
+        const { amount, grantType, itemId, proPlan } = req.body || {};
 
         const amt = parseFloat(amount);
         if (!amt || amt < 1) {
             return res
                 .status(400)
                 .json({ error: "amount ต้องเป็นจำนวนเงินที่ถูกต้อง" });
+        }
+
+        // Determine plan mapping (allow client to send proPlan or infer from amount)
+        let resolvedPlan = null;
+        if (grantType === "pro") {
+            // Prefer explicit proPlan parameter
+            if (proPlan && ["monthly", "yearly"].includes(proPlan)) {
+                resolvedPlan = proPlan;
+            } else {
+                // Infer from common pricing (adjust if pricing changes)
+                if (amt >= 900) resolvedPlan = "yearly"; // e.g. 999
+                else resolvedPlan = "monthly"; // default for smaller amount e.g. 99
+            }
         }
 
         // Build payment reference
@@ -45,7 +58,7 @@ router.post("/create", auth, async (req, res, next) => {
 
         // Create Stripe Payment Intent with PromptPay
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amt * 100), // Convert to satang (cents)
+            amount: Math.round(amt * 100), // Convert to satang
             currency: "thb",
             payment_method_types: ["promptpay"],
             metadata: {
@@ -54,10 +67,12 @@ router.post("/create", auth, async (req, res, next) => {
                 itemId: i || "",
                 paymentId: paymentId,
                 ref: ref,
+                proPlan: resolvedPlan || "",
+                proAmount: grantType === "pro" ? amt : "",
             },
             description: `Vexto ${
                 t === "pro"
-                    ? "Pro Subscription"
+                    ? `Pro Subscription (${resolvedPlan || "monthly"})`
                     : t === "item"
                     ? `Item: ${i}`
                     : "Payment"
@@ -71,9 +86,10 @@ router.post("/create", auth, async (req, res, next) => {
             amount: amt,
             currency: "thb",
             ref,
-            expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min timeout
+            grantType: t,
+            proPlan: resolvedPlan,
+            expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
             stripe_status: paymentIntent.status,
-            // Stripe will handle QR code generation automatically
             stripe_publishable_key: process.env.STRIPE_PUBLISHABLE_KEY,
         });
     } catch (e) {
@@ -131,6 +147,21 @@ router.post("/verify", auth, async (req, res, next) => {
                 // Grant entitlements
                 if (type === "pro") {
                     user.isPro = true;
+                    // Determine plan & extend expiry
+                    const plan = metadata.proPlan || "monthly";
+                    user.proTier = ["monthly", "yearly"].includes(plan)
+                        ? plan
+                        : "monthly";
+                    const now = Date.now();
+                    const baseStart =
+                        user.proExpiry && new Date(user.proExpiry).getTime() > now
+                            ? new Date(user.proExpiry).getTime()
+                            : now;
+                    const durationMs =
+                        user.proTier === "yearly"
+                            ? 365 * 24 * 60 * 60 * 1000
+                            : 30 * 24 * 60 * 60 * 1000; // monthly default ~30 days
+                    user.proExpiry = new Date(baseStart + durationMs);
                 } else if (type === "item" && item && item !== "-") {
                     if (!user.purchasedItems.includes(item)) {
                         user.purchasedItems.push(item);
@@ -145,6 +176,8 @@ router.post("/verify", auth, async (req, res, next) => {
                         userId,
                         type,
                         item: item || null,
+                        proTier: user.proTier,
+                        proExpiry: user.proExpiry,
                     },
                     transaction: {
                         payment_intent_id: paymentIntent.id,
@@ -208,6 +241,20 @@ router.post(
                         if (user) {
                             if (metadata.grantType === "pro") {
                                 user.isPro = true;
+                                const plan = metadata.proPlan || "monthly";
+                                user.proTier = ["monthly", "yearly"].includes(plan)
+                                    ? plan
+                                    : "monthly";
+                                const now = Date.now();
+                                const baseStart =
+                                    user.proExpiry && new Date(user.proExpiry).getTime() > now
+                                        ? new Date(user.proExpiry).getTime()
+                                        : now;
+                                const durationMs =
+                                    user.proTier === "yearly"
+                                        ? 365 * 24 * 60 * 60 * 1000
+                                        : 30 * 24 * 60 * 60 * 1000;
+                                user.proExpiry = new Date(baseStart + durationMs);
                             } else if (
                                 metadata.grantType === "item" &&
                                 metadata.itemId &&
