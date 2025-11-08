@@ -171,14 +171,16 @@ router.get("/discord/start", async (req, res) => {
     }
 });
 
-// Callback: exchange code, upsert user/profile, sign JWT, and redirect to frontend with token
+// Callback: exchange code, upsert user/profile, sign JWT, and return JSON
 router.get("/discord/callback", async (req, res) => {
     try {
         const code = req.query.code;
-        if (!code) return res.status(400).send("Missing code");
+        if (!code) return res.status(400).json({ error: "Missing code" });
         const clientId = process.env.DISCORD_CLIENT_ID;
         const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-        const redirectUri = process.env.DISCORD_REDIRECT_URI;
+        const redirectUri =
+            process.env.DISCORD_FRONTEND_REDIRECT ||
+            "http://localhost:3000/auth/discord/callback";
         const frontendRedirect =
             process.env.DISCORD_FRONTEND_REDIRECT ||
             (process.env.FRONTEND_BASE_URL
@@ -293,11 +295,8 @@ router.get("/discord/callback", async (req, res) => {
         }
 
         const token = signToken(user._id.toString());
-        if (frontendRedirect) {
-            const redirectUrl = new URL(frontendRedirect);
-            redirectUrl.searchParams.set("token", token);
-            return res.redirect(redirectUrl.toString());
-        }
+
+        // Return JSON instead of redirect for frontend to handle
         return res.json({
             token,
             user: { id: user._id, email: user.email, username: user.username },
