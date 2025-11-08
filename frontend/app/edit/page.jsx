@@ -191,6 +191,11 @@ export default function EditV2Page() {
         (async () => {
             try {
                 const data = await api.get("/profiles/me/info");
+                // Bring any saved header (stored under props.header in DB) up to block.header for editing/preview
+                const normalizedBlocks = (data.blocks || []).map((b) => {
+                    const header = b?.header || b?.props?.header || null;
+                    return header ? { ...b, header } : b;
+                });
                 setProfile((prev) => ({
                     ...prev,
                     displayName: data.displayName || prev.displayName,
@@ -202,7 +207,7 @@ export default function EditV2Page() {
                         ...prev.theme,
                         ...data.theme,
                     },
-                    blocks: data.blocks || [],
+                    blocks: normalizedBlocks,
                 }));
 
                 // Load username
@@ -297,10 +302,10 @@ export default function EditV2Page() {
 
     function openEditModal(index) {
         const block = profile.blocks[index];
-        // header เป็น property ของ block แล้ว ไม่ต้องหาจาก block ก่อนหน้า
-        // ทำ deep copy เพื่อไม่ให้แก้ไข reference เดิม
+        // header is stored directly as props in block.header
+        // Wrap it in a structure for consistent editing
         const headerData = block.header
-            ? JSON.parse(JSON.stringify(block.header))
+            ? { props: JSON.parse(JSON.stringify(block.header)) }
             : null;
 
         setEditModal({
@@ -337,12 +342,13 @@ export default function EditV2Page() {
     function saveBlockEdit() {
         if (editModal.type === "block" && editModal.blockIndex !== null) {
             const newBlocks = [...profile.blocks];
-            // บันทึก block พร้อมกับ header (ถ้ามี)
+            // Save block with header (if exists)
             const updatedBlock = { ...editModal.blockData };
-            if (editModal.headerData) {
-                updatedBlock.header = editModal.headerData;
+            if (editModal.headerData && editModal.headerData.props) {
+                // Store header props directly (not wrapped)
+                updatedBlock.header = editModal.headerData.props;
             } else {
-                delete updatedBlock.header; // ลบ header ถ้าไม่มี
+                delete updatedBlock.header; // Remove header if not present
             }
             newBlocks[editModal.blockIndex] = updatedBlock;
 
@@ -453,6 +459,16 @@ export default function EditV2Page() {
     }
 
     function applyThemePreset(preset) {
+        const outer = preset.outerBackground || preset.background;
+        const textOverrides = {
+            name: preset.textColor,
+            header: preset.accent || preset.textColor,
+            body: preset.textColor,
+            role: preset.accent || preset.textColor,
+            link: preset.accent || preset.textColor,
+            muted: preset.textColor,
+            buttonLabel: "",
+        };
         setProfile({
             ...profile,
             theme: {
@@ -460,9 +476,107 @@ export default function EditV2Page() {
                 primary: preset.primary,
                 accent: preset.accent,
                 background: preset.background,
+                outerBackground: outer,
                 textColor: preset.textColor,
+                textOverrides: {
+                    ...profile.theme?.textOverrides,
+                    ...textOverrides,
+                },
             },
         });
+    }
+
+    // Export/Import profile/theme code
+    function encodePayload(obj) {
+        try {
+            const json = JSON.stringify(obj);
+            return typeof window !== "undefined"
+                ? btoa(unescape(encodeURIComponent(json)))
+                : Buffer.from(json, "utf-8").toString("base64");
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function decodePayload(code) {
+        try {
+            const json =
+                typeof window !== "undefined"
+                    ? decodeURIComponent(escape(atob(code)))
+                    : Buffer.from(code, "base64").toString("utf-8");
+            return JSON.parse(json);
+        } catch (e) {
+            // Try raw JSON
+            try {
+                return JSON.parse(code);
+            } catch {
+                return null;
+            }
+        }
+    }
+
+    async function exportThemeCode() {
+        const payload = { v: 1, kind: "theme", theme: profile.theme };
+        const code = encodePayload(payload);
+        if (!code) return notify("error", "สร้างโค้ดธีมไม่สำเร็จ");
+        try {
+            await navigator.clipboard.writeText(code);
+            notify("success", "คัดลอกโค้ดธีมแล้ว");
+        } catch {
+            notify("warning", code);
+        }
+    }
+
+    async function exportProfileCode() {
+        const payload = {
+            v: 1,
+            kind: "profile",
+            theme: profile.theme,
+            blocks: profile.blocks,
+            displayName: profile.displayName,
+            bio: profile.bio,
+            avatarUrl: profile.avatarUrl,
+            socials: profile.socials,
+        };
+        const code = encodePayload(payload);
+        if (!code) return notify("error", "สร้างโค้ดโปรไฟล์ไม่สำเร็จ");
+        try {
+            await navigator.clipboard.writeText(code);
+            notify("success", "คัดลอกโค้ดโปรไฟล์แล้ว");
+        } catch {
+            notify("warning", code);
+        }
+    }
+
+    function importCode() {
+        const code = prompt("วางโค้ดธีมหรือโปรไฟล์ที่นี่");
+        if (!code) return;
+        const data = decodePayload(code.trim());
+        if (!data || !data.kind) {
+            notify("error", "โค้ดไม่ถูกต้อง");
+            return;
+        }
+        if (data.kind === "theme" && data.theme) {
+            setProfile((prev) => ({ ...prev, theme: { ...prev.theme, ...data.theme } }));
+            notify("success", "นำเข้าธีมแล้ว");
+        } else if (data.kind === "profile") {
+            const confirmReplace = confirm(
+                "ต้องการนำเข้าโปรไฟล์? บล็อกเดิมจะถูกแทนที่"
+            );
+            if (!confirmReplace) return;
+            setProfile((prev) => ({
+                ...prev,
+                theme: { ...prev.theme, ...data.theme },
+                blocks: Array.isArray(data.blocks) ? data.blocks : prev.blocks,
+                displayName: data.displayName || prev.displayName,
+                bio: data.bio || prev.bio,
+                avatarUrl: data.avatarUrl || prev.avatarUrl,
+                socials: Array.isArray(data.socials) ? data.socials : prev.socials,
+            }));
+            notify("success", "นำเข้าโปรไฟล์แล้ว");
+        } else {
+            notify("error", "ชนิดโค้ดไม่รองรับ");
+        }
     }
 
     // Drag and drop handlers
@@ -736,46 +850,49 @@ export default function EditV2Page() {
                                             : [block];
 
                                         return (
-                                            <div
-                                                key={block.id || index}
-                                                className={`relative group cursor-move ${
-                                                    draggedIndex === index
-                                                        ? "opacity-50 scale-95"
-                                                        : ""
-                                                }`}
-                                                draggable
-                                                onDragStart={() =>
-                                                    handleDragStart(index)
-                                                }
-                                                onDragOver={(e) =>
-                                                    handleDragOver(e, index)
-                                                }
-                                                onDragEnd={handleDragEnd}
-                                            >
-                                                <BlockRenderer
-                                                    blocks={blocksToRender}
-                                                    theme={profile.theme}
-                                                />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
-                                                    <button
-                                                        onClick={() =>
-                                                            openEditModal(index)
-                                                        }
-                                                        className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                        title="แก้ไข"
-                                                    >
-                                                        <MdEdit className="w-5 h-5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            deleteBlock(index)
-                                                        }
-                                                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                        title="ลบ"
-                                                    >
-                                                        <FiTrash2 className="w-5 h-5" />
-                                                    </button>
+                                            <div key={block.id || index}>
+                                                <div
+                                                    className={`relative group cursor-move ${
+                                                        draggedIndex === index
+                                                            ? "opacity-50 scale-95"
+                                                            : ""
+                                                    }`}
+                                                    draggable
+                                                    onDragStart={() =>
+                                                        handleDragStart(index)
+                                                    }
+                                                    onDragOver={(e) =>
+                                                        handleDragOver(e, index)
+                                                    }
+                                                    onDragEnd={handleDragEnd}
+                                                >
+                                                    <BlockRenderer
+                                                        blocks={blocksToRender}
+                                                        theme={profile.theme}
+                                                        separated={true}
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
+                                                        <button
+                                                            onClick={() =>
+                                                                openEditModal(index)
+                                                            }
+                                                            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                            title="แก้ไข"
+                                                        >
+                                                            <MdEdit className="w-5 h-5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                deleteBlock(index)
+                                                            }
+                                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                            title="ลบ"
+                                                        >
+                                                            <FiTrash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
+                                                {/* Separator handled by BlockRenderer when separated=true */}
                                             </div>
                                         );
                                     })}
@@ -1271,6 +1388,31 @@ export default function EditV2Page() {
                                                     )}
                                                 </div>
                                             </div>
+                                            <div className="mt-4">
+                                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                    แชร์/นำเข้า ธีมและโปรไฟล์
+                                                </label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        onClick={exportThemeCode}
+                                                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                                                    >
+                                                        คัดลอกโค้ดธีม
+                                                    </button>
+                                                    <button
+                                                        onClick={exportProfileCode}
+                                                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                                                    >
+                                                        คัดลอกโค้ดโปรไฟล์
+                                                    </button>
+                                                    <button
+                                                        onClick={importCode}
+                                                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                                                    >
+                                                        นำเข้าโค้ด
+                                                    </button>
+                                                </div>
+                                            </div>
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
@@ -1337,6 +1479,32 @@ export default function EditV2Page() {
                                                                 theme: {
                                                                     ...profile.theme,
                                                                     background:
+                                                                        e.target
+                                                                            .value,
+                                                                },
+                                                            })
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                        สีพื้นหลังด้านนอก (Outer)
+                                                    </label>
+                                                    <input
+                                                        type="color"
+                                                        className="w-full h-10 rounded cursor-pointer"
+                                                        value={
+                                                            profile.theme
+                                                                .outerBackground ||
+                                                            profile.theme
+                                                                .background
+                                                        }
+                                                        onChange={(e) =>
+                                                            setProfile({
+                                                                ...profile,
+                                                                theme: {
+                                                                    ...profile.theme,
+                                                                    outerBackground:
                                                                         e.target
                                                                             .value,
                                                                 },

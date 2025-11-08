@@ -5,6 +5,7 @@ export default function BlockRenderer({
     blocks = [],
     theme,
     containerClassName,
+    separated = true,
 }) {
     // Helpers
     const readableText = (bg) => {
@@ -37,14 +38,34 @@ export default function BlockRenderer({
     const quoteAccent = el.quoteAccent || theme?.accent || "#22d3ee";
     const buttonBg = el.buttonBg || theme?.primary || "#7c3aed";
 
+    // Expand inline headers: if a block has header in either b.header or b.props.header,
+    // insert a synthetic 'header' block before it. Avoid duplicate headers in a row.
+    const expandedBlocks = [];
+    blocks.forEach((b, idx) => {
+        const hdr = b?.header || b?.props?.header;
+        if (hdr && hdr.title) {
+            const prev = expandedBlocks[expandedBlocks.length - 1];
+            const sameAsPrevHeader =
+                prev && prev.type === "header" && prev?.props?.title === hdr.title;
+            if (!sameAsPrevHeader) {
+                expandedBlocks.push({
+                    id: b?.id ? `${b.id}-hdr` : `hdr-${idx}`,
+                    type: "header",
+                    props: hdr,
+                });
+            }
+        }
+        expandedBlocks.push(b);
+    });
+
     // Group consecutive link/button blocks
     const groupedBlocks = [];
     let currentGroup = [];
-    blocks.forEach((b, idx) => {
+    expandedBlocks.forEach((b, idx) => {
         const t = b.type;
         if (t === "link" || t === "button") {
             currentGroup.push(b);
-            const nextType = blocks[idx + 1]?.type;
+            const nextType = expandedBlocks[idx + 1]?.type;
             if (!nextType || (nextType !== "link" && nextType !== "button")) {
                 if (currentGroup.length > 1)
                     groupedBlocks.push({
@@ -59,16 +80,23 @@ export default function BlockRenderer({
         }
     });
 
+    // Centralized separator renderer: one place to control dividers between blocks
+    const renderSep = (i, t) => {
+        if (!separated) return null;
+        if (i >= groupedBlocks.length - 1) return null;
+        if (t === "header") return null;
+        return (
+            <hr className="my-4" style={{ borderColor: dividerColor }} />
+        );
+    };
+
     return (
         <div className={containerClassName} style={{ fontFamily }}>
             {groupedBlocks.map((b, idx) => {
                 // Button groups
                 if (b.type === "button-group") {
-                    return (
-                        <div
-                            key={`group-${idx}`}
-                            className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 mb-3"
-                        >
+                    const content = (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 mb-3">
                             {b.items.map((item) => {
                                 const size = item.props?.size || "default";
                                 const sizeClasses = {
@@ -98,6 +126,12 @@ export default function BlockRenderer({
                             })}
                         </div>
                     );
+                    return (
+                        <div key={`group-${idx}`}>
+                            {content}
+                            {renderSep(idx, b.type)}
+                        </div>
+                    );
                 }
 
                 // Header
@@ -112,33 +146,33 @@ export default function BlockRenderer({
                         "header",
                         theme?.accent || theme?.textColor || "#f3f4f6"
                     );
-                    return (
+                    const node = (
                         <h2
-                            key={b.id}
                             className={sizeClasses[size] || sizeClasses.default}
                             style={{ color: headerColor }}
                         >
                             {b.props?.title || "หัวข้อ"}
                         </h2>
                     );
+                    return (
+                        <div key={b.id}>
+                            {node}
+                        </div>
+                    );
                 }
 
                 // Text
                 if (b.type === "text") {
                     const c = getTxt("body", theme?.textColor || "#f3f4f6");
+                    const node = (
+                        <div className="p-4 rounded-xl" style={{ borderRadius: br, background: blockBg, border: `1px solid ${blockBorder}` }}>
+                            <p className="leading-relaxed" style={{ color: c }}>{b.props?.text}</p>
+                        </div>
+                    );
                     return (
-                        <div
-                            key={b.id}
-                            className="p-4 rounded-xl"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
-                            <p className="leading-relaxed" style={{ color: c }}>
-                                {b.props?.text}
-                            </p>
+                        <div key={b.id}>
+                            {node}
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -151,37 +185,27 @@ export default function BlockRenderer({
                         default: "p-3 text-base",
                         large: "p-3.5 text-base",
                     };
-                    return (
+                    const node = (
                         <Link
-                            key={b.id}
                             href={b.props?.url || "#"}
-                            className={`block text-center rounded-lg font-medium transition-colors hover:opacity-90 ${
-                                sizeClasses[size] || sizeClasses.default
-                            }`}
-                            style={{
-                                background: buttonBg,
-                                color:
-                                    getTxt("buttonLabel") ||
-                                    readableText(buttonBg),
-                                borderRadius: br,
-                            }}
+                            className={`block text-center rounded-lg font-medium transition-colors hover:opacity-90 ${sizeClasses[size] || sizeClasses.default}`}
+                            style={{ background: buttonBg, color: getTxt("buttonLabel") || readableText(buttonBg), borderRadius: br }}
                         >
                             {b.props?.label || b.props?.url}
                         </Link>
+                    );
+                    return (
+                        <div key={b.id}>
+                            {node}
+                            {renderSep(idx, b.type)}
+                        </div>
                     );
                 }
 
                 // Image
                 if (b.type === "image") {
-                    return (
-                        <div
-                            key={b.id}
-                            className="overflow-hidden rounded-xl2"
-                            style={{
-                                borderRadius: br,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                    const node = (
+                        <div className="overflow-hidden rounded-xl2" style={{ borderRadius: br, border: `1px solid ${blockBorder}` }}>
                             {b.props?.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -199,14 +223,19 @@ export default function BlockRenderer({
                             )}
                         </div>
                     );
+                    return (
+                        <div key={b.id}>
+                            {node}
+                            {renderSep(idx, b.type)}
+                        </div>
+                    );
                 }
 
                 // Video (YouTube)
                 if (b.type === "video") {
                     const url = b.props?.url || "";
-                    return (
+                    const node = (
                         <div
-                            key={b.id}
                             className="aspect-video rounded-xl2 overflow-hidden"
                             style={{
                                 borderRadius: br,
@@ -231,6 +260,12 @@ export default function BlockRenderer({
                             )}
                         </div>
                     );
+                    return (
+                        <div key={b.id}>
+                            {node}
+                            {renderSep(idx, b.type)}
+                        </div>
+                    );
                 }
 
                 // Divider
@@ -252,6 +287,7 @@ export default function BlockRenderer({
                                 items={b.props?.items || []}
                                 theme={theme}
                             />
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -261,32 +297,34 @@ export default function BlockRenderer({
                     const c = getTxt("body", theme?.textColor || "#f3f4f6");
                     const muted = getTxt("muted", c);
                     return (
-                        <div
-                            key={b.id}
-                            className="p-5 rounded-xl border-l-4"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                borderLeftColor: quoteAccent,
-                                borderTop: `1px solid ${blockBorder}`,
-                                borderRight: `1px solid ${blockBorder}`,
-                                borderBottom: `1px solid ${blockBorder}`,
-                            }}
-                        >
-                            <p
-                                className="italic text-lg leading-relaxed"
-                                style={{ color: c, opacity: 0.9 }}
+                        <div key={b.id}>
+                            <div
+                                className="p-5 rounded-xl border-l-4"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    borderLeftColor: quoteAccent,
+                                    borderTop: `1px solid ${blockBorder}`,
+                                    borderRight: `1px solid ${blockBorder}`,
+                                    borderBottom: `1px solid ${blockBorder}`,
+                                }}
                             >
-                                "{b.props?.text || "คำคมโดน ๆ"}"
-                            </p>
-                            {b.props?.author && (
-                                <div
-                                    className="mt-3 text-right text-sm font-medium"
-                                    style={{ color: muted, opacity: 0.7 }}
+                                <p
+                                    className="italic text-lg leading-relaxed"
+                                    style={{ color: c, opacity: 0.9 }}
                                 >
-                                    — {b.props.author}
-                                </div>
-                            )}
+                                    "{b.props?.text || "คำคมโดน ๆ"}"
+                                </p>
+                                {b.props?.author && (
+                                    <div
+                                        className="mt-3 text-right text-sm font-medium"
+                                        style={{ color: muted, opacity: 0.7 }}
+                                    >
+                                        — {b.props.author}
+                                    </div>
+                                )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -295,39 +333,41 @@ export default function BlockRenderer({
                 if (b.type === "gallery") {
                     const images = b.props?.images || [];
                     return (
-                        <div
-                            key={b.id}
-                            className="grid grid-cols-2 sm:grid-cols-3 gap-2"
-                        >
-                            {images.length === 0 && (
-                                <div
-                                    className="col-span-full text-center text-sm rounded-xl2 p-4"
-                                    style={{
-                                        border: `1px solid ${blockBorder}`,
-                                        color: textColor,
-                                        opacity: 0.6,
-                                    }}
-                                >
-                                    ยังไม่มีรูปในแกลเลอรี
-                                </div>
-                            )}
-                            {images.map((url, i) => (
-                                <div
-                                    key={i}
-                                    className="overflow-hidden rounded-xl2"
-                                    style={{
-                                        borderRadius: br,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src={url}
-                                        alt=""
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                            ))}
+                        <div key={b.id}>
+                            <div
+                                className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                            >
+                                {images.length === 0 && (
+                                    <div
+                                        className="col-span-full text-center text-sm rounded-xl2 p-4"
+                                        style={{
+                                            border: `1px solid ${blockBorder}`,
+                                            color: textColor,
+                                            opacity: 0.6,
+                                        }}
+                                    >
+                                        ยังไม่มีรูปในแกลเลอรี
+                                    </div>
+                                )}
+                                {images.map((url, i) => (
+                                    <div
+                                        key={i}
+                                        className="overflow-hidden rounded-xl2"
+                                        style={{
+                                            borderRadius: br,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
+                                    >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={url}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -342,50 +382,52 @@ export default function BlockRenderer({
                         { day: "เสาร์-อาทิตย์", time: "10:00 - 18:00" },
                     ];
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 p-4"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                        <div key={b.id}>
                             <div
-                                className="divide-y"
-                                style={{ borderColor: dividerColor }}
+                                className="rounded-xl2 p-4"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
                             >
-                                {items.map((h, i) => (
-                                    <div
-                                        key={i}
-                                        className="py-2 flex items-center justify-between gap-3"
-                                    >
-                                        <div
-                                            className="font-medium"
-                                            style={{ color: header }}
-                                        >
-                                            {h.day}
-                                        </div>
-                                        <div
-                                            className="text-sm"
-                                            style={{
-                                                color: muted,
-                                                opacity: 0.9,
-                                            }}
-                                        >
-                                            {h.time}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            {b.props?.note && (
                                 <div
-                                    className="mt-3 text-xs"
-                                    style={{ color: muted, opacity: 0.8 }}
+                                    className="divide-y"
+                                    style={{ borderColor: dividerColor }}
                                 >
-                                    {b.props.note}
+                                    {items.map((h, i) => (
+                                        <div
+                                            key={i}
+                                            className="py-2 flex items-center justify-between gap-3"
+                                        >
+                                            <div
+                                                className="font-medium"
+                                                style={{ color: header }}
+                                            >
+                                                {h.day}
+                                            </div>
+                                            <div
+                                                className="text-sm"
+                                                style={{
+                                                    color: muted,
+                                                    opacity: 0.9,
+                                                }}
+                                            >
+                                                {h.time}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
+                                {b.props?.note && (
+                                    <div
+                                        className="mt-3 text-xs"
+                                        style={{ color: muted, opacity: 0.8 }}
+                                    >
+                                        {b.props.note}
+                                    </div>
+                                )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -401,51 +443,54 @@ export default function BlockRenderer({
                         { name: "สปาเท้า", desc: "45 นาที", price: "฿250" },
                     ];
                     return (
-                        <div key={b.id} className="space-y-2">
-                            {items.map((sv, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl2 p-4"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
-                                    <div className="flex items-baseline justify-between gap-3">
-                                        <div>
-                                            <div
-                                                className="font-semibold"
-                                                style={{ color: header }}
-                                            >
-                                                {sv.name}
-                                            </div>
-                                            {sv.desc && (
+                        <div key={b.id}>
+                            <div className="space-y-2">
+                                {items.map((sv, i) => (
+                                    <div
+                                        key={i}
+                                        className="rounded-xl2 p-4"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
+                                    >
+                                        <div className="flex items-baseline justify-between gap-3">
+                                            <div>
                                                 <div
-                                                    className="text-sm mt-0.5"
+                                                    className="font-semibold"
+                                                    style={{ color: header }}
+                                                >
+                                                    {sv.name}
+                                                </div>
+                                                {sv.desc && (
+                                                    <div
+                                                        className="text-sm mt-0.5"
+                                                        style={{
+                                                            color: muted,
+                                                            opacity: 0.9,
+                                                        }}
+                                                    >
+                                                        {sv.desc}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {sv.price && (
+                                                <div
+                                                    className="text-sm font-medium px-2 py-1 rounded-md"
                                                     style={{
-                                                        color: muted,
-                                                        opacity: 0.9,
+                                                        color: body,
+                                                        border: `1px solid ${blockBorder}`,
                                                     }}
                                                 >
-                                                    {sv.desc}
+                                                    {sv.price}
                                                 </div>
                                             )}
                                         </div>
-                                        {sv.price && (
-                                            <div
-                                                className="text-sm font-medium px-2 py-1 rounded-md"
-                                                style={{
-                                                    color: body,
-                                                    border: `1px solid ${blockBorder}`,
-                                                }}
-                                            >
-                                                {sv.price}
-                                            </div>
-                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -473,52 +518,54 @@ export default function BlockRenderer({
                         },
                     ];
                     return (
-                        <div
-                            key={b.id}
-                            className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-                        >
-                            {plans.map((p, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl2 p-4"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
+                        <div key={b.id}>
+                            <div
+                                className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+                            >
+                                {plans.map((p, i) => (
                                     <div
-                                        className="text-lg font-bold"
-                                        style={{ color: header }}
+                                        key={i}
+                                        className="rounded-xl2 p-4"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
                                     >
-                                        {p.title}
+                                        <div
+                                            className="text-lg font-bold"
+                                            style={{ color: header }}
+                                        >
+                                            {p.title}
+                                        </div>
+                                        <div
+                                            className="mt-1 text-2xl font-extrabold"
+                                            style={{ color: header }}
+                                        >
+                                            {p.price}
+                                        </div>
+                                        {Array.isArray(p.features) &&
+                                            p.features.length > 0 && (
+                                                <ul className="mt-3 space-y-1">
+                                                    {p.features.map((f, j) => (
+                                                        <li
+                                                            key={j}
+                                                            className="text-sm flex items-start gap-2"
+                                                            style={{
+                                                                color: muted,
+                                                                opacity: 0.9,
+                                                            }}
+                                                        >
+                                                            <span>•</span>
+                                                            <span>{f}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
                                     </div>
-                                    <div
-                                        className="mt-1 text-2xl font-extrabold"
-                                        style={{ color: header }}
-                                    >
-                                        {p.price}
-                                    </div>
-                                    {Array.isArray(p.features) &&
-                                        p.features.length > 0 && (
-                                            <ul className="mt-3 space-y-1">
-                                                {p.features.map((f, j) => (
-                                                    <li
-                                                        key={j}
-                                                        className="text-sm flex items-start gap-2"
-                                                        style={{
-                                                            color: muted,
-                                                            opacity: 0.9,
-                                                        }}
-                                                    >
-                                                        <span>•</span>
-                                                        <span>{f}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -587,86 +634,88 @@ export default function BlockRenderer({
                     }
 
                     return (
-                        <div
-                            key={b.id}
-                            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                        >
-                            {items.map((p, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl2 overflow-hidden"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
-                                    {p.image && (
-                                        <div
-                                            className="aspect-[16/9] w-full overflow-hidden"
-                                            style={{
-                                                borderBottom: `1px solid ${blockBorder}`,
-                                            }}
-                                        >
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
-                                                src={p.image}
-                                                alt={p.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="p-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <div
-                                                    className="font-semibold"
-                                                    style={{ color: header }}
-                                                >
-                                                    {p.name}
-                                                </div>
-                                                {p.desc && (
+                        <div key={b.id}>
+                            <div
+                                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                            >
+                                {items.map((p, i) => (
+                                    <div
+                                        key={i}
+                                        className="rounded-xl2 overflow-hidden"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
+                                    >
+                                        {p.image && (
+                                            <div
+                                                className="aspect-[16/9] w-full overflow-hidden"
+                                                style={{
+                                                    borderBottom: `1px solid ${blockBorder}`,
+                                                }}
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={p.image}
+                                                    alt={p.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
                                                     <div
-                                                        className="text-sm mt-0.5"
+                                                        className="font-semibold"
+                                                        style={{ color: header }}
+                                                    >
+                                                        {p.name}
+                                                    </div>
+                                                    {p.desc && (
+                                                        <div
+                                                            className="text-sm mt-0.5"
+                                                            style={{
+                                                                color: muted,
+                                                                opacity: 0.9,
+                                                            }}
+                                                        >
+                                                            {p.desc}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {p.price && (
+                                                    <div
+                                                        className="text-sm font-medium px-2 py-1 rounded-md whitespace-nowrap"
                                                         style={{
-                                                            color: muted,
-                                                            opacity: 0.9,
+                                                            color: body,
+                                                            border: `1px solid ${blockBorder}`,
                                                         }}
                                                     >
-                                                        {p.desc}
+                                                        {p.price}
                                                     </div>
                                                 )}
                                             </div>
-                                            {p.price && (
-                                                <div
-                                                    className="text-sm font-medium px-2 py-1 rounded-md whitespace-nowrap"
+                                            {p.url && (
+                                                <Link
+                                                    href={p.url}
+                                                    className="inline-block mt-3 px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
                                                     style={{
-                                                        color: body,
-                                                        border: `1px solid ${blockBorder}`,
+                                                        background: buttonBg,
+                                                        color:
+                                                            getTxt("buttonLabel") ||
+                                                            readableText(buttonBg),
+                                                        borderRadius: br,
                                                     }}
                                                 >
-                                                    {p.price}
-                                                </div>
+                                                    ดูรายละเอียด
+                                                </Link>
                                             )}
                                         </div>
-                                        {p.url && (
-                                            <Link
-                                                href={p.url}
-                                                className="inline-block mt-3 px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                                                style={{
-                                                    background: buttonBg,
-                                                    color:
-                                                        getTxt("buttonLabel") ||
-                                                        readableText(buttonBg),
-                                                    borderRadius: br,
-                                                }}
-                                            >
-                                                ดูรายละเอียด
-                                            </Link>
-                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -678,15 +727,15 @@ export default function BlockRenderer({
                     const muted = getTxt("muted", body);
                     const info = b.props || {};
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 p-4 my-3 space-y-3"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 p-4 my-3 space-y-3"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
+                            >
                             {info.phone && (
                                 <div
                                     className="text-sm"
@@ -737,6 +786,8 @@ export default function BlockRenderer({
                                     {info.note}
                                 </div>
                             )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -748,16 +799,16 @@ export default function BlockRenderer({
                     const addr = b.props?.address || "ยังไม่ได้ใส่ที่อยู่";
                     const mapUrl = b.props?.mapUrl;
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 p-4 my-3"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
-                            <div className="space-y-3">
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 p-4 my-3"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
+                            >
+                                <div className="space-y-3">
                                 <div
                                     className="text-sm whitespace-pre-line"
                                     style={{ color: body, opacity: 0.9 }}
@@ -789,7 +840,9 @@ export default function BlockRenderer({
                                         {b.props.note}
                                     </div>
                                 )}
+                                </div>
                             </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -807,15 +860,15 @@ export default function BlockRenderer({
                     const hasLocation = info.address || info.mapUrl;
 
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 p-6 my-3"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 p-6 my-3"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
+                            >
                             <div className="grid md:grid-cols-2 gap-6">
                                 {/* Contact Section */}
                                 {hasContact && (
@@ -1029,6 +1082,8 @@ export default function BlockRenderer({
                                     💡 {info.note}
                                 </div>
                             )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1042,42 +1097,45 @@ export default function BlockRenderer({
                         { label: "สถิติ", value: "--", sub: "รายละเอียด" },
                     ];
                     return (
-                        <div key={b.id} className="grid gap-2 sm:grid-cols-3">
-                            {items.map((s, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl2 p-4"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
+                        <div key={b.id}>
+                            <div className="grid gap-2 sm:grid-cols-3">
+                                {items.map((s, i) => (
                                     <div
-                                        className="text-xs uppercase tracking-wide"
-                                        style={{ color: muted, opacity: 0.8 }}
+                                        key={i}
+                                        className="rounded-xl2 p-4"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
                                     >
-                                        {s.label}
-                                    </div>
-                                    <div
-                                        className="mt-1 text-2xl font-extrabold"
-                                        style={{ color: header }}
-                                    >
-                                        {s.value}
-                                    </div>
-                                    {s.sub && (
                                         <div
-                                            className="text-xs"
-                                            style={{
-                                                color: muted,
-                                                opacity: 0.8,
-                                            }}
+                                            className="text-xs uppercase tracking-wide"
+                                            style={{ color: muted, opacity: 0.8 }}
                                         >
-                                            {s.sub}
+                                            {s.label}
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+                                        <div
+                                            className="mt-1 text-2xl font-extrabold"
+                                            style={{ color: header }}
+                                        >
+                                            {s.value}
+                                        </div>
+                                        {s.sub && (
+                                            <div
+                                                className="text-xs"
+                                                style={{
+                                                    color: muted,
+                                                    opacity: 0.8,
+                                                }}
+                                            >
+                                                {s.sub}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1091,31 +1149,34 @@ export default function BlockRenderer({
                         { q: "ถามอะไรได้บ้าง?", a: "เพิ่มคำถามคำตอบได้เอง" },
                     ];
                     return (
-                        <div key={b.id} className="space-y-2">
-                            {items.map((it, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-xl p-3"
-                                    style={{
-                                        borderRadius: br,
-                                        background: blockBg,
-                                        border: `1px solid ${blockBorder}`,
-                                    }}
-                                >
+                        <div key={b.id}>
+                            <div className="space-y-2">
+                                {items.map((it, i) => (
                                     <div
-                                        className="font-semibold"
-                                        style={{ color: header }}
+                                        key={i}
+                                        className="rounded-xl p-3"
+                                        style={{
+                                            borderRadius: br,
+                                            background: blockBg,
+                                            border: `1px solid ${blockBorder}`,
+                                        }}
                                     >
-                                        {it.q}
+                                        <div
+                                            className="font-semibold"
+                                            style={{ color: header }}
+                                        >
+                                            {it.q}
+                                        </div>
+                                        <div
+                                            className="text-sm mt-1"
+                                            style={{ color: muted, opacity: 0.9 }}
+                                        >
+                                            {it.a}
+                                        </div>
                                     </div>
-                                    <div
-                                        className="text-sm mt-1"
-                                        style={{ color: muted, opacity: 0.9 }}
-                                    >
-                                        {it.a}
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1127,15 +1188,15 @@ export default function BlockRenderer({
                     const roleC = getTxt("role", theme?.accent || "#22d3ee");
                     const linkC = getTxt("link", theme?.accent || body);
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-2xl p-6"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-2xl p-6"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
+                            >
                             <div className="space-y-3">
                                 <div
                                     className="text-xl font-bold"
@@ -1187,6 +1248,8 @@ export default function BlockRenderer({
                                     </p>
                                 )}
                             </div>
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1320,6 +1383,7 @@ export default function BlockRenderer({
                                     );
                                 })}
                             </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1330,9 +1394,10 @@ export default function BlockRenderer({
                     const header = getTxt("header", theme?.accent || body);
                     const items = b.props?.items || [];
                     return (
-                        <div key={b.id} className="space-y-4">
-                            {items.map((cat, i) => (
-                                <div key={i}>
+                        <div key={b.id}>
+                            <div className="space-y-4">
+                                {items.map((cat, i) => (
+                                    <div key={i}>
                                     <div
                                         className="text-sm font-semibold mb-2"
                                         style={{ color: header, opacity: 0.95 }}
@@ -1355,8 +1420,10 @@ export default function BlockRenderer({
                                             </span>
                                         ))}
                                     </div>
-                                </div>
-                            ))}
+                                    </div>
+                                ))}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1367,17 +1434,17 @@ export default function BlockRenderer({
                     const header = getTxt("header", c);
                     const btnLabel = getTxt("buttonLabel");
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-2xl border-2 p-6 text-center"
-                            style={{
-                                borderColor: theme?.accent || "#22d3ee",
-                                background: `linear-gradient(135deg, ${
-                                    theme?.primary || "#7c3aed"
-                                }15, ${theme?.accent || "#22d3ee"}15)`,
-                                borderRadius: br,
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-2xl border-2 p-6 text-center"
+                                style={{
+                                    borderColor: theme?.accent || "#22d3ee",
+                                    background: `linear-gradient(135deg, ${
+                                        theme?.primary || "#7c3aed"
+                                    }15, ${theme?.accent || "#22d3ee"}15)`,
+                                    borderRadius: br,
+                                }}
+                            >
                             <div
                                 className="text-2xl font-bold mb-2"
                                 style={{ color: header }}
@@ -1405,6 +1472,8 @@ export default function BlockRenderer({
                             >
                                 {b.props?.buttonLabel || "ซื้อกาแฟให้เรา"}
                             </Link>
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1434,15 +1503,15 @@ export default function BlockRenderer({
                         }
                     }
                     return (
-                        <div
-                            key={b.id}
-                            className="aspect-video rounded-xl2 overflow-hidden"
-                            style={{
-                                borderRadius: br,
-                                border: `1px solid ${blockBorder}`,
-                                background: "rgba(0,0,0,0.4)",
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="aspect-video rounded-xl2 overflow-hidden"
+                                style={{
+                                    borderRadius: br,
+                                    border: `1px solid ${blockBorder}`,
+                                    background: "rgba(0,0,0,0.4)",
+                                }}
+                            >
                             {embedUrl ? (
                                 <iframe
                                     className="w-full h-full"
@@ -1458,6 +1527,8 @@ export default function BlockRenderer({
                                     ยังไม่ได้ใส่ลิงก์วิดีโอ
                                 </div>
                             )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1476,15 +1547,15 @@ export default function BlockRenderer({
                         }
                     }
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 overflow-hidden"
-                            style={{
-                                borderRadius: br,
-                                border: `1px solid ${blockBorder}`,
-                                height: b.props?.height || "380px",
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 overflow-hidden"
+                                style={{
+                                    borderRadius: br,
+                                    border: `1px solid ${blockBorder}`,
+                                    height: b.props?.height || "380px",
+                                }}
+                            >
                             {embedUrl ? (
                                 <iframe
                                     className="w-full h-full"
@@ -1500,6 +1571,8 @@ export default function BlockRenderer({
                                     ยังไม่ได้ใส่ลิงก์ Spotify
                                 </div>
                             )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1527,15 +1600,15 @@ export default function BlockRenderer({
                     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 p-6"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 p-6"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
+                            >
                             <div className="text-center">
                                 <div className="grid grid-cols-4 gap-3 mb-4">
                                     {[
@@ -1582,6 +1655,8 @@ export default function BlockRenderer({
                                     </div>
                                 )}
                             </div>
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1595,15 +1670,15 @@ export default function BlockRenderer({
                     const title = b.props?.title || "สนับสนุนผ่าน PromptPay";
 
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 p-6 text-center"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 p-6 text-center"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
+                            >
                             <div
                                 className="text-lg font-semibold mb-3"
                                 style={{ color: header }}
@@ -1639,6 +1714,8 @@ export default function BlockRenderer({
                                     ยังไม่ได้กรอกเบอร์ PromptPay
                                 </div>
                             )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1653,15 +1730,15 @@ export default function BlockRenderer({
                         : "";
 
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 overflow-hidden"
-                            style={{
-                                borderRadius: br,
-                                border: `1px solid ${blockBorder}`,
-                                height: b.props?.height || "300px",
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 overflow-hidden"
+                                style={{
+                                    borderRadius: br,
+                                    border: `1px solid ${blockBorder}`,
+                                    height: b.props?.height || "300px",
+                                }}
+                            >
                             {embedUrl && b.props?.apiKey ? (
                                 <iframe
                                     className="w-full h-full"
@@ -1679,6 +1756,8 @@ export default function BlockRenderer({
                                         : "ยังไม่ได้ใส่ตำแหน่ง"}
                                 </div>
                             )}
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1690,15 +1769,15 @@ export default function BlockRenderer({
                     const title = b.props?.title || "ติดต่อเรา";
 
                     return (
-                        <div
-                            key={b.id}
-                            className="rounded-xl2 p-6"
-                            style={{
-                                borderRadius: br,
-                                background: blockBg,
-                                border: `1px solid ${blockBorder}`,
-                            }}
-                        >
+                        <div key={b.id}>
+                            <div
+                                className="rounded-xl2 p-6"
+                                style={{
+                                    borderRadius: br,
+                                    background: blockBg,
+                                    border: `1px solid ${blockBorder}`,
+                                }}
+                            >
                             <div
                                 className="text-lg font-semibold mb-4"
                                 style={{ color: header }}
@@ -1753,6 +1832,8 @@ export default function BlockRenderer({
                                     ส่งข้อความ
                                 </button>
                             </form>
+                            </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1764,16 +1845,8 @@ export default function BlockRenderer({
                     const body = getTxt("body", textColor);
 
                     return (
-                        <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div key={b.id}>
+                            <div className="mt-3 mb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {items.map((item, i) => (
                                     <div
                                         key={i}
@@ -1828,6 +1901,7 @@ export default function BlockRenderer({
                                     </div>
                                 ))}
                             </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1839,16 +1913,8 @@ export default function BlockRenderer({
                     const body = getTxt("body", textColor);
 
                     return (
-                        <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4 text-center"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div key={b.id}>
+                            <div className="mt-3 mb-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {items.map((item, i) => (
                                     <div
                                         key={i}
@@ -1915,6 +1981,7 @@ export default function BlockRenderer({
                                     </div>
                                 ))}
                             </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -1926,16 +1993,8 @@ export default function BlockRenderer({
                     const body = getTxt("body", textColor);
 
                     return (
-                        <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4 text-center"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div key={b.id}>
+                            <div className="mt-3 mb-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {items.map((item, i) => (
                                     <div
                                         key={i}
@@ -2019,6 +2078,7 @@ export default function BlockRenderer({
                                     </div>
                                 ))}
                             </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -2030,16 +2090,8 @@ export default function BlockRenderer({
                     const body = getTxt("body", textColor);
 
                     return (
-                        <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4 text-center"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div key={b.id}>
+                            <div className="mt-3 mb-3 grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {items.map((item, i) => (
                                     <div
                                         key={i}
@@ -2068,6 +2120,7 @@ export default function BlockRenderer({
                                     </div>
                                 ))}
                             </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -2079,16 +2132,8 @@ export default function BlockRenderer({
                     const body = getTxt("body", textColor);
 
                     return (
-                        <div key={b.id} className="mt-3 mb-3">
-                            {b.header?.title && (
-                                <div
-                                    className="text-xl font-bold mb-4"
-                                    style={{ color: header }}
-                                >
-                                    {b.header.title}
-                                </div>
-                            )}
-                            <div className="space-y-6">
+                        <div key={b.id}>
+                            <div className="mt-3 mb-3 space-y-6">
                                 {items.map((item, i) => (
                                     <div key={i} className="flex gap-4">
                                         <div
@@ -2124,6 +2169,7 @@ export default function BlockRenderer({
                                     </div>
                                 ))}
                             </div>
+                            {renderSep(idx, b.type)}
                         </div>
                     );
                 }
@@ -2137,7 +2183,13 @@ export default function BlockRenderer({
                         บล็อกชนิด {b.type} ยังไม่รองรับในพรีวิว
                     </div>
                 );
+
             })}
+            {/* {separated && groupedBlocks.length > 1 && (
+                // Render dividers between items by overlaying hr using CSS gaps would require wrapping each.
+                // Instead, we render nothing here; per-item separators are inserted inline below.
+                <hr className="my-4" style={{ borderColor: dividerColor }} />
+            )} */}
         </div>
     );
 }

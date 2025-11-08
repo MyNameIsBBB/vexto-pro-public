@@ -436,23 +436,53 @@ const shopProfile = {
 };
 
 export default function ExamplesPage() {
+    const sanitizeProfile = (p) => {
+        const clone = JSON.parse(JSON.stringify(p));
+        // Make all external links point to this examples page (internal), to avoid navigating out
+        const internal = "/examples";
+        // socials
+        clone.socials = (clone.socials || []).map((s) => ({
+            label: s.label,
+            url: internal,
+        }));
+        // blocks
+        clone.blocks = (clone.blocks || []).map((b) => {
+            const nb = { ...b, props: { ...(b.props || {}) } };
+            // Common url fields
+            if (nb.props && typeof nb.props.url === "string") nb.props.url = internal;
+            if (nb.props && typeof nb.props.mapUrl === "string") nb.props.mapUrl = internal;
+            if (nb.props && typeof nb.props.website === "string") nb.props.website = internal;
+            if (nb.props && typeof nb.props.line === "string") nb.props.line = internal;
+            // Collections with items that may contain url
+            if (Array.isArray(nb.props?.items)) {
+                nb.props.items = nb.props.items.map((it) => {
+                    const ni = { ...it };
+                    if (typeof ni.url === "string") ni.url = internal;
+                    return ni;
+                });
+            }
+            return nb;
+        });
+        return clone;
+    };
+
     const profiles = [
         {
             id: "streamer",
             name: "🎮 สตรีมเมอร์",
-            profile: streamerProfile,
+            profile: sanitizeProfile(streamerProfile),
             color: "from-purple-500 to-cyan-500",
         },
         {
             id: "personal",
             name: "👤 คนทั่วไป",
-            profile: personalProfile,
+            profile: sanitizeProfile(personalProfile),
             color: "from-pink-500 to-rose-500",
         },
         {
             id: "shop",
             name: "🏪 ร้านค้า/บริการ",
-            profile: shopProfile,
+            profile: sanitizeProfile(shopProfile),
             color: "from-emerald-500 to-teal-500",
         },
     ];
@@ -647,6 +677,7 @@ function ProfileCard({ profile, profileId }) {
                 <BlockRenderer
                     blocks={profile.blocks || []}
                     theme={profile.theme}
+                    separated={true}
                 />
             </div>
         </div>

@@ -15,13 +15,34 @@ export default function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Ensure the deepest background is controlled by profile outer background
+    useEffect(() => {
+        if (typeof document !== "undefined") {
+            const prev = document.body.style.background;
+            document.body.style.background = "transparent";
+            return () => {
+                document.body.style.background = prev;
+            };
+        }
+    }, []);
+
     useEffect(() => {
         async function fetchProfile() {
             try {
                 setLoading(true);
-                const apiUrl =
-                    process.env.NEXT_PUBLIC_API_BASE_URL ||
-                    "http://localhost:5001/api";
+                // Resolve API base: prefer env, else use '/api' in production, fallback to localhost in dev
+                const apiUrl = (() => {
+                    if (process.env.NEXT_PUBLIC_API_BASE_URL)
+                        return process.env.NEXT_PUBLIC_API_BASE_URL;
+                    if (typeof window !== "undefined") {
+                        const host = window.location.hostname;
+                        const isLocal =
+                            host === "localhost" || host === "127.0.0.1";
+                        return isLocal ? "http://localhost:5001/api" : "/api";
+                    }
+                    return "http://localhost:5001/api";
+                })();
+                
                 const response = await fetch(`${apiUrl}/profiles/${username}`);
 
                 if (!response.ok) {
@@ -45,6 +66,7 @@ export default function UserProfile() {
         if (username) {
             fetchProfile();
         } else {
+            setLoading(false);
         }
     }, [username]);
 
@@ -60,19 +82,50 @@ export default function UserProfile() {
     }
 
     if (error) {
+        const isNotFound = error === "ไม่พบโปรไฟล์นี้";
+        if (isNotFound) {
+            return (
+                <div className="min-h-screen relative flex items-center justify-center px-6 py-14 overflow-hidden" style={{ background: "#0a0a0f" }}>
+                    {/* Outer themed background overlay */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-fuchsia-600/20 to-cyan-400/20 blur-3xl" />
+                        <div className="absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-gradient-to-tr from-cyan-400/15 to-fuchsia-600/15 blur-3xl" />
+                    </div>
+
+                    <div className="relative z-10 max-w-xl w-full">
+                        <div className="rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl p-8 text-center shadow-2xl">
+                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 border border-white/10">
+                                <MdErrorOutline className="h-8 w-8 text-white/80" />
+                            </div>
+                            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+                                ไม่พบโปรไฟล์นี้
+                            </h1>
+                            <p className="mt-3 text-white/70">
+                                อาจมีการลบ เปลี่ยนชื่อ หรือยังไม่ได้เผยแพร่เป็นสาธารณะ
+                            </p>
+                            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                                <Link href="/examples" className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-white hover:bg-white/10 transition">
+                                    ดูตัวอย่างโปรไฟล์
+                                </Link>
+                                <Link href="/" className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-fuchsia-600 to-cyan-400 px-5 py-3 text-white font-semibold hover:opacity-90 transition">
+                                    กลับสู่หน้าหลัก
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Generic error
         return (
             <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
                 <div className="max-w-md w-full text-center">
                     <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8">
                         <MdErrorOutline className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                        <h1 className="text-2xl font-bold text-white mb-2">
-                            เกิดข้อผิดพลาด
-                        </h1>
+                        <h1 className="text-2xl font-bold text-white mb-2">เกิดข้อผิดพลาด</h1>
                         <p className="text-gray-400 mb-6">{error}</p>
-                        <Link
-                            href="/"
-                            className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl transition-colors"
-                        >
+                        <Link href="/" className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl transition-colors">
                             กลับสู่หน้าหลัก
                         </Link>
                     </div>
@@ -152,32 +205,23 @@ export default function UserProfile() {
                 style={buildOuterBg(theme)}
                 aria-hidden
             />
-            <div className="relative z-10 min-h-screen p-6">
+            <div className="relative z-10 min-h-screen p-4 sm:p-6">
                 <div className="max-w-3xl mx-auto">
+                    {/* Single main content frame with inner background */}
                     <div
-                        className="rounded-2xl border p-5"
-                        style={{
-                            borderColor: (theme?.textColor || "#f3f4f6") + "33",
-                        }}
+                        className="relative rounded-3xl border border-white/10 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-md hover:border-white/20 transition-all duration-300"
+                        style={{ ...buildInnerBg(theme), fontFamily }}
                     >
-                        <div
-                            className="rounded-xl overflow-hidden"
-                            style={buildInnerBg(theme)}
-                        >
-                            <div
-                                className="relative rounded-3xl border border-white/10 p-6 md:p-8 shadow-2xl backdrop-blur-md bg-white/[0.02] hover:border-white/20 transition-all duration-300"
-                                style={{ fontFamily }}
-                            >
                                 {/* Share button top-right */}
                                 <button
                                     onClick={handleShare}
-                                    className="absolute top-3 right-3 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
+                                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
                                     aria-label="แชร์โปรไฟล์นี้"
                                     title="แชร์โปรไฟล์นี้"
                                 >
-                                    <MdShare className="w-5 h-5" />
+                                    <MdShare className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </button>
-                                <div className="flex flex-col sm:flex-row sm:items-start gap-5 mb-6">
+                                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5 mb-6">
                                     {/* Avatar with frame options */}
                                     {profile.avatarUrl ? (
                                         (() => {
@@ -185,7 +229,7 @@ export default function UserProfile() {
                                                 profile.avatarFrame || "none";
                                             if (frame === "gradient") {
                                                 return (
-                                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] shadow-xl">
+                                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] shadow-xl mx-auto sm:mx-0">
                                                         <img
                                                             src={
                                                                 profile.avatarUrl
@@ -208,16 +252,16 @@ export default function UserProfile() {
                                                 <img
                                                     src={profile.avatarUrl}
                                                     alt="avatar"
-                                                    className={`w-20 h-20 rounded-full object-cover ${ringClass}`}
+                                                    className={`w-20 h-20 rounded-full object-cover mx-auto sm:mx-0 ${ringClass}`}
                                                 />
                                             );
                                         })()
                                     ) : (
-                                        <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20" />
+                                        <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20 mx-auto sm:mx-0" />
                                     )}
-                                    <div className="flex-1">
+                                    <div className="flex-1 text-center sm:text-left">
                                         <div
-                                            className="text-2xl font-bold mb-1"
+                                            className="text-xl sm:text-2xl font-bold mb-1"
                                             style={{ color: nameColor }}
                                         >
                                             {profile.displayName}
@@ -254,6 +298,7 @@ export default function UserProfile() {
                                                     : profile.blocks.slice(0, 3)
                                             }
                                             theme={theme}
+                                            separated={true}
                                         />
                                     </div>
                                 ) : (
@@ -264,21 +309,15 @@ export default function UserProfile() {
                                         </p>
                                     </div>
                                 )}
+                        {/* Yellow branding bar for free users */}
+                        {!isPro && (
+                            <div className="mt-6 rounded-xl border border-yellow-300/30 bg-yellow-400/90 text-gray-900 text-center py-3 px-4 font-medium text-sm">
+                                อยากมีโปรไฟล์แบบนี้?{" "}
+                                <Link href="/pro" className="underline font-bold hover:text-gray-700">
+                                    มาสร้างกับเรา
+                                </Link>
                             </div>
-                            {/* Yellow branding bar for free users */}
-                            {!isPro && (
-                                <div className="bg-yellow-400 text-gray-900 text-center py-3 px-4 font-medium text-sm">
-                                    อยากมีโปรไฟล์แบบนี้?{" "}
-                                    <Link
-                                        href="/pro"
-                                        className="underline font-bold hover:text-gray-700"
-                                    >
-                                        มาสร้างกับเรา
-                                    </Link>
-                                </div>
-                            )}
-                            {/* Removed old back button footer */}
-                        </div>
+                        )}
                     </div>
                 </div>
                 {/* Page footer with logo link */}

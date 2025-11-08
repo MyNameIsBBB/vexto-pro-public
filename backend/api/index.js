@@ -7,12 +7,12 @@ require("dotenv").config();
 
 const app = express();
 
-// Import routes
-const authRoutes = require("./routes/auth");
-const profileRoutes = require("./routes/profile");
-const feedbackRoutes = require("./routes/feedback");
-const creatorsRoutes = require("./routes/creators");
-const paymentRoutes = require("./routes/payment");
+// Import routes from shared src folder
+const authRoutes = require("../src/routes/auth");
+const profileRoutes = require("../src/routes/profile");
+const feedbackRoutes = require("../src/routes/feedback");
+const creatorsRoutes = require("../src/routes/creators");
+const paymentRoutes = require("../src/routes/payment");
 
 // Security middleware
 app.use(helmet());
@@ -50,7 +50,8 @@ if (!mongoose.connection.readyState) {
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/profile", profileRoutes);
+// Use plural to match frontend expectations
+app.use("/api/profiles", profileRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/creators", creatorsRoutes);
 app.use("/api/payment", paymentRoutes);

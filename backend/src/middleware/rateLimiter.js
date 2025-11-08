@@ -9,22 +9,27 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Strict limiter for auth endpoints (5 requests per 15 minutes)
+// Strict limiter for auth endpoints (10 login attempts per 15 minutes)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 10,
     message: {
         error: "Too many authentication attempts, please try again later",
     },
     standardHeaders: true,
     legacyHeaders: false,
+    // Only limit POST requests (login/register), not GET
+    skip: (req) => req.method === 'GET',
 });
 
-// Profile update limiter (20 requests per hour)
+// Profile limiter - lenient for reads, strict for writes
 const profileLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 20,
-    message: { error: "Too many profile updates, please try again later" },
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: (req) => {
+        // Allow more GET requests (reads) vs PUT/POST (writes)
+        return req.method === 'GET' ? 200 : 30;
+    },
+    message: { error: "Too many profile requests, please try again later" },
     standardHeaders: true,
     legacyHeaders: false,
 });

@@ -65,15 +65,22 @@ function validateProfileUpdate(req, res, next) {
         if (blocks.length > 50) {
             return res.status(400).json({ error: "Too many blocks (max 50)" });
         }
-        // Basic sanitization of block content
+        // Preserve extra top-level keys by merging them into props (e.g., header)
         req.body.blocks = blocks.map((block) => {
             if (!block.type || typeof block.type !== "string") {
                 throw new Error("Invalid block type");
             }
+            const cleanType = block.type.toLowerCase().trim();
+            const baseProps = block && typeof block.props === "object" && block.props ? { ...block.props } : {};
+            Object.keys(block || {}).forEach((k) => {
+                if (!["id", "type", "props"].includes(k)) {
+                    if (baseProps[k] === undefined) baseProps[k] = block[k];
+                }
+            });
             return {
                 id: block.id || require("uuid").v4(),
-                type: block.type.toLowerCase().trim(),
-                props: block.props || {},
+                type: cleanType,
+                props: baseProps,
             };
         });
     }

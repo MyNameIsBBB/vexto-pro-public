@@ -9,12 +9,48 @@ const ThemeSchema = new mongoose.Schema(
         outerBackground: { type: String, default: "#0b1020" },
         accent: { type: String, default: "#22d3ee" },
         borderRadius: { type: String, default: "12px" },
+        // Typography & text colors
+        textColor: { type: String, default: "#f3f4f6" },
+        fontFamily: {
+            type: String,
+            enum: ["prompt", "kanit", "sarabun"],
+            default: "prompt",
+        },
+        textOverrides: {
+            type: new mongoose.Schema(
+                {
+                    name: { type: String, default: "" },
+                    header: { type: String, default: "" },
+                    body: { type: String, default: "" },
+                    muted: { type: String, default: "" },
+                    role: { type: String, default: "" },
+                    link: { type: String, default: "" },
+                    buttonLabel: { type: String, default: "" },
+                },
+                { _id: false }
+            ),
+            default: () => ({}),
+        },
         backgroundImage: { type: String, default: "" },
         outerBackgroundImage: { type: String, default: "" },
         backgroundScope: {
             type: String,
             enum: ["card", "full"],
             default: "card",
+        },
+        // Element-level colors for fine-tuning
+        elementColors: {
+            type: new mongoose.Schema(
+                {
+                    blockBg: { type: String, default: "" },
+                    blockBorder: { type: String, default: "" },
+                    divider: { type: String, default: "" },
+                    quoteAccent: { type: String, default: "" },
+                    buttonBg: { type: String, default: "" },
+                },
+                { _id: false }
+            ),
+            default: () => ({}),
         },
     },
     { _id: false }
