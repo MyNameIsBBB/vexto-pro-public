@@ -26,22 +26,20 @@ export default function LoginPage() {
     }
 
     function loginWithDiscord() {
-        const base =
-            process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001/api";
+        // Discord redirects directly to frontend, then frontend calls backend
+        const clientId = "1435829670275710976";
         const redirectUri = `${window.location.origin}/auth/discord/callback`;
-        const url = `${base}/auth/discord/start?redirect_uri=${encodeURIComponent(
-            redirectUri
-        )}`;
+        const scope = encodeURIComponent("identify email");
+        const url = `https://discord.com/api/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
         window.location.href = url;
     }
 
     function loginWithGoogle() {
-        const base =
-            process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001/api";
+        // Google redirects directly to frontend, then frontend calls backend
+        const clientId = "YOUR_GOOGLE_CLIENT_ID"; // จะต้องใส่ค่าจริง
         const redirectUri = `${window.location.origin}/auth/google/callback`;
-        const url = `${base}/auth/google/start?redirect_uri=${encodeURIComponent(
-            redirectUri
-        )}`;
+        const scope = encodeURIComponent("openid email profile");
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&access_type=offline&prompt=consent`;
         window.location.href = url;
     }
 

@@ -343,12 +343,9 @@ router.get("/google/callback", async (req, res) => {
 
         const clientId = process.env.GOOGLE_CLIENT_ID;
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-        const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-        const frontendRedirect =
+        const redirectUri =
             process.env.GOOGLE_FRONTEND_REDIRECT ||
-            (process.env.FRONTEND_BASE_URL
-                ? `${process.env.FRONTEND_BASE_URL}/auth/google/callback`
-                : "http://localhost:3000/auth/google/callback");
+            "http://localhost:3000/auth/google/callback";
 
         if (!clientId || !clientSecret || !redirectUri) {
             return res
@@ -463,17 +460,8 @@ router.get("/google/callback", async (req, res) => {
         }
 
         const token = signToken(user._id.toString());
-        if (state) {
-            res.redirect(
-                `${frontendRedirect}?token=${encodeURIComponent(
-                    token
-                )}&state=${encodeURIComponent(state)}`
-            );
-        } else {
-            res.redirect(
-                `${frontendRedirect}?token=${encodeURIComponent(token)}`
-            );
-        }
+        
+        // Return JSON instead of redirect for frontend to handle
         return res.json({
             token,
             user: { id: user._id, email: user.email, username: user.username },
