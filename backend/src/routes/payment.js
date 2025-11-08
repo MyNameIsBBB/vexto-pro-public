@@ -39,15 +39,33 @@ router.post("/create", auth, async (req, res, next) => {
         // Block Pro purchase if user already has active Pro
         if (grantType === "pro") {
             const user = await User.findById(req.userId);
-            if (user && user.isPro && user.proExpiry) {
+
+            // Admin always has Pro and no expiry - block purchase
+            if (user && user.isAdmin) {
+                return res.status(400).json({
+                    error: "Admin ไม่สามารถซื้อ Pro ได้",
+                });
+            }
+
+            // Check if user has active Pro subscription
+            if (user && user.isPro) {
                 const now = new Date();
-                if (new Date(user.proExpiry) > now) {
+
+                // If proExpiry exists and still valid, block
+                if (user.proExpiry && new Date(user.proExpiry) > now) {
                     const daysLeft = Math.ceil(
                         (new Date(user.proExpiry) - now) / (1000 * 60 * 60 * 24)
                     );
                     return res.status(400).json({
                         error: `คุณมี Pro อยู่แล้ว หมดอายุในอีก ${daysLeft} วัน`,
                         proExpiry: user.proExpiry,
+                    });
+                }
+
+                // If isPro but no expiry (legacy/manual grant), still block
+                if (!user.proExpiry) {
+                    return res.status(400).json({
+                        error: "คุณมี Pro อยู่แล้ว กรุณาติดต่อ admin หากต้องการต่ออายุ",
                     });
                 }
             }

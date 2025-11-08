@@ -16,7 +16,7 @@ router.get("/me/info", auth, async (req, res) => {
         if (!profile)
             return res.status(404).json({ error: "Profile not found" });
         const user = await User.findById(req.userId).select(
-            "email username isPro isAdmin"
+            "email username isPro isAdmin proTier proExpiry"
         );
         const obj = profile.toObject();
         // ถ้าเป็น admin ให้ isPro = true เลย
@@ -24,6 +24,7 @@ router.get("/me/info", auth, async (req, res) => {
         return res.json({
             ...obj,
             isPro: !!effectiveIsPro,
+            proExpiry: user?.proExpiry || null,
             user: user
                 ? {
                       id: String(user._id),
@@ -31,6 +32,8 @@ router.get("/me/info", auth, async (req, res) => {
                       username: user.username,
                       isPro: !!effectiveIsPro,
                       isAdmin: !!user.isAdmin,
+                      proTier: user.proTier,
+                      proExpiry: user.proExpiry,
                   }
                 : undefined,
         });
@@ -77,7 +80,10 @@ router.put("/me", auth, validateProfileUpdate, async (req, res) => {
 
         // Normalize blocks: preserve any top-level fields (e.g., header, title) by moving them into props
         const normalizedBlocks = (finalBlocks || []).map((b) => {
-            const props = b && typeof b.props === "object" && b.props ? { ...b.props } : {};
+            const props =
+                b && typeof b.props === "object" && b.props
+                    ? { ...b.props }
+                    : {};
             // Move any extra top-level keys into props to avoid data loss
             Object.keys(b || {}).forEach((key) => {
                 if (!["id", "type", "props"].includes(key)) {
@@ -141,11 +147,9 @@ router.put("/me/username", auth, async (req, res) => {
         const isPro = user?.isAdmin || user?.isPro || false;
 
         if (!isPro) {
-            return res
-                .status(403)
-                .json({
-                    error: "ต้องเป็นสมาชิก Pro ถึงจะเปลี่ยน username ได้",
-                });
+            return res.status(403).json({
+                error: "ต้องเป็นสมาชิก Pro ถึงจะเปลี่ยน username ได้",
+            });
         }
 
         // Check if username is already taken
