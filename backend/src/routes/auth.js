@@ -371,13 +371,6 @@ router.get("/google/callback", async (req, res) => {
         });
         const tokenJson = await tokenRes.json();
 
-        console.log("Google token exchange response:", {
-            status: tokenRes.status,
-            ok: tokenRes.ok,
-            data: tokenJson,
-            redirectUri: redirectUri,
-        });
-
         if (!tokenRes.ok || !tokenJson.access_token) {
             console.error("Google token error", tokenJson);
             return res.status(400).json({
