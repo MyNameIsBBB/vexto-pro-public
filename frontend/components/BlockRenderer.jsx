@@ -6,6 +6,7 @@ export default function BlockRenderer({
     theme,
     containerClassName,
     separated = true,
+    disableLinks = false,
 }) {
     // Helpers
     const readableText = (bg) => {
@@ -46,7 +47,9 @@ export default function BlockRenderer({
         if (hdr && hdr.title) {
             const prev = expandedBlocks[expandedBlocks.length - 1];
             const sameAsPrevHeader =
-                prev && prev.type === "header" && prev?.props?.title === hdr.title;
+                prev &&
+                prev.type === "header" &&
+                prev?.props?.title === hdr.title;
             if (!sameAsPrevHeader) {
                 expandedBlocks.push({
                     id: b?.id ? `${b.id}-hdr` : `hdr-${idx}`,
@@ -85,9 +88,7 @@ export default function BlockRenderer({
         if (!separated) return null;
         if (i >= groupedBlocks.length - 1) return null;
         if (t === "header") return null;
-        return (
-            <hr className="my-4" style={{ borderColor: dividerColor }} />
-        );
+        return <hr className="my-4" style={{ borderColor: dividerColor }} />;
     };
 
     return (
@@ -104,21 +105,44 @@ export default function BlockRenderer({
                                     default: "p-3 text-base",
                                     large: "p-3.5 text-base",
                                 };
+
+                                const url = item.props?.url || "#";
+                                const isDisabled = disableLinks || url === "#";
+
+                                const style = {
+                                    background: buttonBg,
+                                    color:
+                                        getTxt("buttonLabel") ||
+                                        readableText(buttonBg),
+                                    borderRadius: br,
+                                };
+
+                                if (isDisabled) {
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            className={`block w-full text-center rounded-lg font-medium transition-colors cursor-default opacity-50 ${
+                                                sizeClasses[size] ||
+                                                sizeClasses.default
+                                            }`}
+                                            style={style}
+                                            disabled
+                                        >
+                                            {item.props?.label ||
+                                                item.props?.url}
+                                        </button>
+                                    );
+                                }
+
                                 return (
                                     <Link
                                         key={item.id}
-                                        href={item.props?.url || "#"}
+                                        href={url}
                                         className={`block text-center rounded-lg font-medium transition-colors hover:opacity-90 ${
                                             sizeClasses[size] ||
                                             sizeClasses.default
                                         }`}
-                                        style={{
-                                            background: buttonBg,
-                                            color:
-                                                getTxt("buttonLabel") ||
-                                                readableText(buttonBg),
-                                            borderRadius: br,
-                                        }}
+                                        style={style}
                                     >
                                         {item.props?.label || item.props?.url}
                                     </Link>
@@ -154,19 +178,24 @@ export default function BlockRenderer({
                             {b.props?.title || "หัวข้อ"}
                         </h2>
                     );
-                    return (
-                        <div key={b.id}>
-                            {node}
-                        </div>
-                    );
+                    return <div key={b.id}>{node}</div>;
                 }
 
                 // Text
                 if (b.type === "text") {
                     const c = getTxt("body", theme?.textColor || "#f3f4f6");
                     const node = (
-                        <div className="p-4 rounded-xl" style={{ borderRadius: br, background: blockBg, border: `1px solid ${blockBorder}` }}>
-                            <p className="leading-relaxed" style={{ color: c }}>{b.props?.text}</p>
+                        <div
+                            className="p-4 rounded-xl"
+                            style={{
+                                borderRadius: br,
+                                background: blockBg,
+                                border: `1px solid ${blockBorder}`,
+                            }}
+                        >
+                            <p className="leading-relaxed" style={{ color: c }}>
+                                {b.props?.text}
+                            </p>
                         </div>
                     );
                     return (
@@ -185,11 +214,43 @@ export default function BlockRenderer({
                         default: "p-3 text-base",
                         large: "p-3.5 text-base",
                     };
+
+                    const url = b.props?.url || "#";
+                    const isDisabled = disableLinks || url === "#";
+
+                    const style = {
+                        background: buttonBg,
+                        color: getTxt("buttonLabel") || readableText(buttonBg),
+                        borderRadius: br,
+                    };
+
+                    if (isDisabled) {
+                        const node = (
+                            <button
+                                className={`block w-full text-center rounded-lg font-medium transition-colors cursor-default opacity-50 ${
+                                    sizeClasses[size] || sizeClasses.default
+                                }`}
+                                style={style}
+                                disabled
+                            >
+                                {b.props?.label || b.props?.url}
+                            </button>
+                        );
+                        return (
+                            <div key={b.id}>
+                                {node}
+                                {renderSep(idx, b.type)}
+                            </div>
+                        );
+                    }
+
                     const node = (
                         <Link
-                            href={b.props?.url || "#"}
-                            className={`block text-center rounded-lg font-medium transition-colors hover:opacity-90 ${sizeClasses[size] || sizeClasses.default}`}
-                            style={{ background: buttonBg, color: getTxt("buttonLabel") || readableText(buttonBg), borderRadius: br }}
+                            href={url}
+                            className={`block text-center rounded-lg font-medium transition-colors hover:opacity-90 ${
+                                sizeClasses[size] || sizeClasses.default
+                            }`}
+                            style={style}
                         >
                             {b.props?.label || b.props?.url}
                         </Link>
@@ -205,7 +266,13 @@ export default function BlockRenderer({
                 // Image
                 if (b.type === "image") {
                     const node = (
-                        <div className="overflow-hidden rounded-xl2" style={{ borderRadius: br, border: `1px solid ${blockBorder}` }}>
+                        <div
+                            className="overflow-hidden rounded-xl2"
+                            style={{
+                                borderRadius: br,
+                                border: `1px solid ${blockBorder}`,
+                            }}
+                        >
                             {b.props?.url ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -334,9 +401,7 @@ export default function BlockRenderer({
                     const images = b.props?.images || [];
                     return (
                         <div key={b.id}>
-                            <div
-                                className="grid grid-cols-2 sm:grid-cols-3 gap-2"
-                            >
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {images.length === 0 && (
                                     <div
                                         className="col-span-full text-center text-sm rounded-xl2 p-4"
@@ -519,9 +584,7 @@ export default function BlockRenderer({
                     ];
                     return (
                         <div key={b.id}>
-                            <div
-                                className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-                            >
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 {plans.map((p, i) => (
                                     <div
                                         key={i}
@@ -635,9 +698,7 @@ export default function BlockRenderer({
 
                     return (
                         <div key={b.id}>
-                            <div
-                                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                            >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {items.map((p, i) => (
                                     <div
                                         key={i}
@@ -668,7 +729,9 @@ export default function BlockRenderer({
                                                 <div>
                                                     <div
                                                         className="font-semibold"
-                                                        style={{ color: header }}
+                                                        style={{
+                                                            color: header,
+                                                        }}
                                                     >
                                                         {p.name}
                                                     </div>
@@ -703,8 +766,12 @@ export default function BlockRenderer({
                                                     style={{
                                                         background: buttonBg,
                                                         color:
-                                                            getTxt("buttonLabel") ||
-                                                            readableText(buttonBg),
+                                                            getTxt(
+                                                                "buttonLabel"
+                                                            ) ||
+                                                            readableText(
+                                                                buttonBg
+                                                            ),
                                                         borderRadius: br,
                                                     }}
                                                 >
@@ -736,56 +803,56 @@ export default function BlockRenderer({
                                     border: `1px solid ${blockBorder}`,
                                 }}
                             >
-                            {info.phone && (
-                                <div
-                                    className="text-sm"
-                                    style={{ color: body }}
-                                >
-                                    📞{" "}
-                                    <Link
-                                        href={`tel:${info.phone}`}
-                                        style={{ color: linkC }}
+                                {info.phone && (
+                                    <div
+                                        className="text-sm"
+                                        style={{ color: body }}
                                     >
-                                        {info.phone}
-                                    </Link>
-                                </div>
-                            )}
-                            {info.line && (
-                                <div
-                                    className="text-sm"
-                                    style={{ color: body }}
-                                >
-                                    🟢 LINE:{" "}
-                                    <Link
-                                        href={info.line}
-                                        style={{ color: linkC }}
+                                        📞{" "}
+                                        <Link
+                                            href={`tel:${info.phone}`}
+                                            style={{ color: linkC }}
+                                        >
+                                            {info.phone}
+                                        </Link>
+                                    </div>
+                                )}
+                                {info.line && (
+                                    <div
+                                        className="text-sm"
+                                        style={{ color: body }}
                                     >
-                                        {info.line}
-                                    </Link>
-                                </div>
-                            )}
-                            {info.website && (
-                                <div
-                                    className="text-sm"
-                                    style={{ color: body }}
-                                >
-                                    🌐{" "}
-                                    <Link
-                                        href={info.website}
-                                        style={{ color: linkC }}
+                                        🟢 LINE:{" "}
+                                        <Link
+                                            href={info.line}
+                                            style={{ color: linkC }}
+                                        >
+                                            {info.line}
+                                        </Link>
+                                    </div>
+                                )}
+                                {info.website && (
+                                    <div
+                                        className="text-sm"
+                                        style={{ color: body }}
                                     >
-                                        {info.website}
-                                    </Link>
-                                </div>
-                            )}
-                            {info.note && (
-                                <div
-                                    className="text-xs"
-                                    style={{ color: muted, opacity: 0.8 }}
-                                >
-                                    {info.note}
-                                </div>
-                            )}
+                                        🌐{" "}
+                                        <Link
+                                            href={info.website}
+                                            style={{ color: linkC }}
+                                        >
+                                            {info.website}
+                                        </Link>
+                                    </div>
+                                )}
+                                {info.note && (
+                                    <div
+                                        className="text-xs"
+                                        style={{ color: muted, opacity: 0.8 }}
+                                    >
+                                        {info.note}
+                                    </div>
+                                )}
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -809,37 +876,40 @@ export default function BlockRenderer({
                                 }}
                             >
                                 <div className="space-y-3">
-                                <div
-                                    className="text-sm whitespace-pre-line"
-                                    style={{ color: body, opacity: 0.9 }}
-                                >
-                                    {addr}
-                                </div>
-                                {mapUrl && (
-                                    <Link
-                                        href={mapUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-block px-4 py-2 rounded-lg text-sm font-medium"
-                                        style={{
-                                            background: buttonBg,
-                                            color:
-                                                getTxt("buttonLabel") ||
-                                                readableText(buttonBg),
-                                            borderRadius: br,
-                                        }}
-                                    >
-                                        ดูแผนที่
-                                    </Link>
-                                )}
-                                {b.props?.note && (
                                     <div
-                                        className="text-xs"
-                                        style={{ color: muted, opacity: 0.8 }}
+                                        className="text-sm whitespace-pre-line"
+                                        style={{ color: body, opacity: 0.9 }}
                                     >
-                                        {b.props.note}
+                                        {addr}
                                     </div>
-                                )}
+                                    {mapUrl && (
+                                        <Link
+                                            href={mapUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-block px-4 py-2 rounded-lg text-sm font-medium"
+                                            style={{
+                                                background: buttonBg,
+                                                color:
+                                                    getTxt("buttonLabel") ||
+                                                    readableText(buttonBg),
+                                                borderRadius: br,
+                                            }}
+                                        >
+                                            ดูแผนที่
+                                        </Link>
+                                    )}
+                                    {b.props?.note && (
+                                        <div
+                                            className="text-xs"
+                                            style={{
+                                                color: muted,
+                                                opacity: 0.8,
+                                            }}
+                                        >
+                                            {b.props.note}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {renderSep(idx, b.type)}
@@ -869,219 +939,241 @@ export default function BlockRenderer({
                                     border: `1px solid ${blockBorder}`,
                                 }}
                             >
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {/* Contact Section */}
-                                {hasContact && (
-                                    <div className="space-y-3">
-                                        <div
-                                            className="text-base font-semibold mb-4 pb-2 border-b"
-                                            style={{
-                                                color: header,
-                                                borderColor: `${header}30`,
-                                            }}
-                                        >
-                                            📞 ติดต่อเรา
-                                        </div>
-                                        {info.phone && (
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                                    style={{
-                                                        background: `${header}20`,
-                                                        color: header,
-                                                    }}
-                                                >
-                                                    📞
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div
-                                                        className="text-xs opacity-70"
-                                                        style={{ color: muted }}
-                                                    >
-                                                        โทรศัพท์
-                                                    </div>
-                                                    <Link
-                                                        href={`tel:${info.phone}`}
-                                                        className="text-sm font-medium hover:underline"
-                                                        style={{ color: linkC }}
-                                                    >
-                                                        {info.phone}
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {info.email && (
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                                    style={{
-                                                        background: `${header}20`,
-                                                        color: header,
-                                                    }}
-                                                >
-                                                    📧
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div
-                                                        className="text-xs opacity-70"
-                                                        style={{ color: muted }}
-                                                    >
-                                                        อีเมล
-                                                    </div>
-                                                    <Link
-                                                        href={`mailto:${info.email}`}
-                                                        className="text-sm font-medium hover:underline break-all"
-                                                        style={{ color: linkC }}
-                                                    >
-                                                        {info.email}
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {info.line && (
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                                    style={{
-                                                        background: `${header}20`,
-                                                        color: header,
-                                                    }}
-                                                >
-                                                    💬
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div
-                                                        className="text-xs opacity-70"
-                                                        style={{ color: muted }}
-                                                    >
-                                                        LINE
-                                                    </div>
-                                                    <Link
-                                                        href={info.line}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="text-sm font-medium hover:underline"
-                                                        style={{ color: linkC }}
-                                                    >
-                                                        เพิ่มเพื่อน
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {info.website && (
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                                    style={{
-                                                        background: `${header}20`,
-                                                        color: header,
-                                                    }}
-                                                >
-                                                    🌐
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div
-                                                        className="text-xs opacity-70"
-                                                        style={{ color: muted }}
-                                                    >
-                                                        เว็บไซต์
-                                                    </div>
-                                                    <Link
-                                                        href={info.website}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="text-sm font-medium hover:underline break-all"
-                                                        style={{ color: linkC }}
-                                                    >
-                                                        {info.website.replace(
-                                                            /^https?:\/\//,
-                                                            ""
-                                                        )}
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Location Section */}
-                                {hasLocation && (
-                                    <div className="space-y-3">
-                                        <div
-                                            className="text-base font-semibold mb-4 pb-2 border-b"
-                                            style={{
-                                                color: header,
-                                                borderColor: `${header}30`,
-                                            }}
-                                        >
-                                            📍 ที่ตั้ง
-                                        </div>
-                                        {info.address && (
-                                            <div className="flex items-start gap-3">
-                                                <div
-                                                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                                                    style={{
-                                                        background: `${header}20`,
-                                                        color: header,
-                                                    }}
-                                                >
-                                                    📍
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div
-                                                        className="text-xs opacity-70 mb-1"
-                                                        style={{ color: muted }}
-                                                    >
-                                                        ที่อยู่
-                                                    </div>
-                                                    <div
-                                                        className="text-sm leading-relaxed whitespace-pre-line"
-                                                        style={{
-                                                            color: body,
-                                                            opacity: 0.9,
-                                                        }}
-                                                    >
-                                                        {info.address}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {info.mapUrl && (
-                                            <Link
-                                                href={info.mapUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {/* Contact Section */}
+                                    {hasContact && (
+                                        <div className="space-y-3">
+                                            <div
+                                                className="text-base font-semibold mb-4 pb-2 border-b"
                                                 style={{
-                                                    background: buttonBg,
-                                                    color:
-                                                        getTxt("buttonLabel") ||
-                                                        readableText(buttonBg),
-                                                    borderRadius: br,
-                                                    boxShadow:
-                                                        "0 2px 8px rgba(0,0,0,0.1)",
+                                                    color: header,
+                                                    borderColor: `${header}30`,
                                                 }}
                                             >
-                                                🗺️ ดูแผนที่
-                                            </Link>
-                                        )}
+                                                📞 ติดต่อเรา
+                                            </div>
+                                            {info.phone && (
+                                                <div className="flex items-center gap-3">
+                                                    <div
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                                                        style={{
+                                                            background: `${header}20`,
+                                                            color: header,
+                                                        }}
+                                                    >
+                                                        📞
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div
+                                                            className="text-xs opacity-70"
+                                                            style={{
+                                                                color: muted,
+                                                            }}
+                                                        >
+                                                            โทรศัพท์
+                                                        </div>
+                                                        <Link
+                                                            href={`tel:${info.phone}`}
+                                                            className="text-sm font-medium hover:underline"
+                                                            style={{
+                                                                color: linkC,
+                                                            }}
+                                                        >
+                                                            {info.phone}
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {info.email && (
+                                                <div className="flex items-center gap-3">
+                                                    <div
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                                                        style={{
+                                                            background: `${header}20`,
+                                                            color: header,
+                                                        }}
+                                                    >
+                                                        📧
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div
+                                                            className="text-xs opacity-70"
+                                                            style={{
+                                                                color: muted,
+                                                            }}
+                                                        >
+                                                            อีเมล
+                                                        </div>
+                                                        <Link
+                                                            href={`mailto:${info.email}`}
+                                                            className="text-sm font-medium hover:underline break-all"
+                                                            style={{
+                                                                color: linkC,
+                                                            }}
+                                                        >
+                                                            {info.email}
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {info.line && (
+                                                <div className="flex items-center gap-3">
+                                                    <div
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                                                        style={{
+                                                            background: `${header}20`,
+                                                            color: header,
+                                                        }}
+                                                    >
+                                                        💬
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div
+                                                            className="text-xs opacity-70"
+                                                            style={{
+                                                                color: muted,
+                                                            }}
+                                                        >
+                                                            LINE
+                                                        </div>
+                                                        <Link
+                                                            href={info.line}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="text-sm font-medium hover:underline"
+                                                            style={{
+                                                                color: linkC,
+                                                            }}
+                                                        >
+                                                            เพิ่มเพื่อน
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {info.website && (
+                                                <div className="flex items-center gap-3">
+                                                    <div
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                                                        style={{
+                                                            background: `${header}20`,
+                                                            color: header,
+                                                        }}
+                                                    >
+                                                        🌐
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div
+                                                            className="text-xs opacity-70"
+                                                            style={{
+                                                                color: muted,
+                                                            }}
+                                                        >
+                                                            เว็บไซต์
+                                                        </div>
+                                                        <Link
+                                                            href={info.website}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="text-sm font-medium hover:underline break-all"
+                                                            style={{
+                                                                color: linkC,
+                                                            }}
+                                                        >
+                                                            {info.website.replace(
+                                                                /^https?:\/\//,
+                                                                ""
+                                                            )}
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Location Section */}
+                                    {hasLocation && (
+                                        <div className="space-y-3">
+                                            <div
+                                                className="text-base font-semibold mb-4 pb-2 border-b"
+                                                style={{
+                                                    color: header,
+                                                    borderColor: `${header}30`,
+                                                }}
+                                            >
+                                                📍 ที่ตั้ง
+                                            </div>
+                                            {info.address && (
+                                                <div className="flex items-start gap-3">
+                                                    <div
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                                                        style={{
+                                                            background: `${header}20`,
+                                                            color: header,
+                                                        }}
+                                                    >
+                                                        📍
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div
+                                                            className="text-xs opacity-70 mb-1"
+                                                            style={{
+                                                                color: muted,
+                                                            }}
+                                                        >
+                                                            ที่อยู่
+                                                        </div>
+                                                        <div
+                                                            className="text-sm leading-relaxed whitespace-pre-line"
+                                                            style={{
+                                                                color: body,
+                                                                opacity: 0.9,
+                                                            }}
+                                                        >
+                                                            {info.address}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {info.mapUrl && (
+                                                <Link
+                                                    href={info.mapUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                                                    style={{
+                                                        background: buttonBg,
+                                                        color:
+                                                            getTxt(
+                                                                "buttonLabel"
+                                                            ) ||
+                                                            readableText(
+                                                                buttonBg
+                                                            ),
+                                                        borderRadius: br,
+                                                        boxShadow:
+                                                            "0 2px 8px rgba(0,0,0,0.1)",
+                                                    }}
+                                                >
+                                                    🗺️ ดูแผนที่
+                                                </Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Note */}
+                                {info.note && (
+                                    <div
+                                        className="mt-6 pt-4 border-t text-sm"
+                                        style={{
+                                            color: muted,
+                                            opacity: 0.8,
+                                            borderColor: `${muted}20`,
+                                        }}
+                                    >
+                                        💡 {info.note}
                                     </div>
                                 )}
-                            </div>
-
-                            {/* Note */}
-                            {info.note && (
-                                <div
-                                    className="mt-6 pt-4 border-t text-sm"
-                                    style={{
-                                        color: muted,
-                                        opacity: 0.8,
-                                        borderColor: `${muted}20`,
-                                    }}
-                                >
-                                    💡 {info.note}
-                                </div>
-                            )}
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1111,7 +1203,10 @@ export default function BlockRenderer({
                                     >
                                         <div
                                             className="text-xs uppercase tracking-wide"
-                                            style={{ color: muted, opacity: 0.8 }}
+                                            style={{
+                                                color: muted,
+                                                opacity: 0.8,
+                                            }}
                                         >
                                             {s.label}
                                         </div>
@@ -1169,7 +1264,10 @@ export default function BlockRenderer({
                                         </div>
                                         <div
                                             className="text-sm mt-1"
-                                            style={{ color: muted, opacity: 0.9 }}
+                                            style={{
+                                                color: muted,
+                                                opacity: 0.9,
+                                            }}
                                         >
                                             {it.a}
                                         </div>
@@ -1197,57 +1295,63 @@ export default function BlockRenderer({
                                     border: `1px solid ${blockBorder}`,
                                 }}
                             >
-                            <div className="space-y-3">
-                                <div
-                                    className="text-xl font-bold"
-                                    style={{ color: nameC }}
-                                >
-                                    {b.props?.name || "ชื่อของคุณ"}
-                                </div>
-                                <div
-                                    className="text-sm font-medium"
-                                    style={{ color: roleC }}
-                                >
-                                    {b.props?.role || "ตำแหน่ง/อาชีพ"}
-                                </div>
-                                {b.props?.location && (
+                                <div className="space-y-3">
                                     <div
-                                        className="flex items-center gap-2 text-sm"
-                                        style={{ color: body, opacity: 0.7 }}
+                                        className="text-xl font-bold"
+                                        style={{ color: nameC }}
                                     >
-                                        <span>📍</span>
-                                        <span>{b.props.location}</span>
+                                        {b.props?.name || "ชื่อของคุณ"}
                                     </div>
-                                )}
-                                {b.props?.email && (
                                     <div
-                                        className="flex items-center gap-2 text-sm"
-                                        style={{ color: body, opacity: 0.7 }}
+                                        className="text-sm font-medium"
+                                        style={{ color: roleC }}
                                     >
-                                        <span>✉️</span>
-                                        <Link
-                                            href={`mailto:${b.props.email}`}
-                                            className="hover:opacity-100 transition-opacity"
-                                            style={{ color: linkC }}
+                                        {b.props?.role || "ตำแหน่ง/อาชีพ"}
+                                    </div>
+                                    {b.props?.location && (
+                                        <div
+                                            className="flex items-center gap-2 text-sm"
+                                            style={{
+                                                color: body,
+                                                opacity: 0.7,
+                                            }}
                                         >
-                                            {b.props.email}
-                                        </Link>
-                                    </div>
-                                )}
-                                {b.props?.bio && (
-                                    <p
-                                        className="text-sm leading-relaxed pt-2"
-                                        style={{
-                                            color: body,
-                                            opacity: 0.8,
-                                            borderTop: `1px solid ${blockBorder}`,
-                                            paddingTop: "0.5rem",
-                                        }}
-                                    >
-                                        {b.props.bio}
-                                    </p>
-                                )}
-                            </div>
+                                            <span>📍</span>
+                                            <span>{b.props.location}</span>
+                                        </div>
+                                    )}
+                                    {b.props?.email && (
+                                        <div
+                                            className="flex items-center gap-2 text-sm"
+                                            style={{
+                                                color: body,
+                                                opacity: 0.7,
+                                            }}
+                                        >
+                                            <span>✉️</span>
+                                            <Link
+                                                href={`mailto:${b.props.email}`}
+                                                className="hover:opacity-100 transition-opacity"
+                                                style={{ color: linkC }}
+                                            >
+                                                {b.props.email}
+                                            </Link>
+                                        </div>
+                                    )}
+                                    {b.props?.bio && (
+                                        <p
+                                            className="text-sm leading-relaxed pt-2"
+                                            style={{
+                                                color: body,
+                                                opacity: 0.8,
+                                                borderTop: `1px solid ${blockBorder}`,
+                                                paddingTop: "0.5rem",
+                                            }}
+                                        >
+                                            {b.props.bio}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1398,28 +1502,31 @@ export default function BlockRenderer({
                             <div className="space-y-4">
                                 {items.map((cat, i) => (
                                     <div key={i}>
-                                    <div
-                                        className="text-sm font-semibold mb-2"
-                                        style={{ color: header, opacity: 0.95 }}
-                                    >
-                                        {cat.category}
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {cat.skills?.map((skill, j) => (
-                                            <span
-                                                key={j}
-                                                className="px-3 py-1 rounded-lg text-sm transition-colors"
-                                                style={{
-                                                    color: body,
-                                                    opacity: 0.9,
-                                                    border: `1px solid ${blockBorder}`,
-                                                    background: blockBg,
-                                                }}
-                                            >
-                                                {skill}
-                                            </span>
-                                        ))}
-                                    </div>
+                                        <div
+                                            className="text-sm font-semibold mb-2"
+                                            style={{
+                                                color: header,
+                                                opacity: 0.95,
+                                            }}
+                                        >
+                                            {cat.category}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {cat.skills?.map((skill, j) => (
+                                                <span
+                                                    key={j}
+                                                    className="px-3 py-1 rounded-lg text-sm transition-colors"
+                                                    style={{
+                                                        color: body,
+                                                        opacity: 0.9,
+                                                        border: `1px solid ${blockBorder}`,
+                                                        background: blockBg,
+                                                    }}
+                                                >
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -1433,6 +1540,9 @@ export default function BlockRenderer({
                     const c = getTxt("body", theme?.textColor || "#f3f4f6");
                     const header = getTxt("header", c);
                     const btnLabel = getTxt("buttonLabel");
+                    const url = b.props?.url || "#";
+                    const isDisabled = disableLinks || url === "#";
+
                     return (
                         <div key={b.id}>
                             <div
@@ -1445,33 +1555,54 @@ export default function BlockRenderer({
                                     borderRadius: br,
                                 }}
                             >
-                            <div
-                                className="text-2xl font-bold mb-2"
-                                style={{ color: header }}
-                            >
-                                {b.props?.title || "☕ สนับสนุนเรา"}
-                            </div>
-                            <p
-                                className="text-sm mb-4 max-w-md mx-auto"
-                                style={{ color: c, opacity: 0.8 }}
-                            >
-                                {b.props?.description ||
-                                    "ทุกการสนับสนุนคือกำลังใจในการสร้างสรรค์ผลงาน"}
-                            </p>
-                            <Link
-                                href={b.props?.url || "#"}
-                                className="inline-block px-6 py-3 rounded-xl font-medium hover:scale-105 transition-transform"
-                                style={{
-                                    background: theme?.primary || "#7c3aed",
-                                    color:
-                                        btnLabel ||
-                                        readableText(
-                                            theme?.primary || "#7c3aed"
-                                        ),
-                                }}
-                            >
-                                {b.props?.buttonLabel || "ซื้อกาแฟให้เรา"}
-                            </Link>
+                                <div
+                                    className="text-2xl font-bold mb-2"
+                                    style={{ color: header }}
+                                >
+                                    {b.props?.title || "☕ สนับสนุนเรา"}
+                                </div>
+                                <p
+                                    className="text-sm mb-4 max-w-md mx-auto"
+                                    style={{ color: c, opacity: 0.8 }}
+                                >
+                                    {b.props?.description ||
+                                        "ทุกการสนับสนุนคือกำลังใจในการสร้างสรรค์ผลงาน"}
+                                </p>
+                                {isDisabled ? (
+                                    <button
+                                        className="inline-block px-6 py-3 rounded-xl font-medium transition-transform cursor-default opacity-50"
+                                        style={{
+                                            background:
+                                                theme?.primary || "#7c3aed",
+                                            color:
+                                                btnLabel ||
+                                                readableText(
+                                                    theme?.primary || "#7c3aed"
+                                                ),
+                                        }}
+                                        disabled
+                                    >
+                                        {b.props?.buttonLabel ||
+                                            "ซื้อกาแฟให้เรา"}
+                                    </button>
+                                ) : (
+                                    <Link
+                                        href={url}
+                                        className="inline-block px-6 py-3 rounded-xl font-medium hover:scale-105 transition-transform"
+                                        style={{
+                                            background:
+                                                theme?.primary || "#7c3aed",
+                                            color:
+                                                btnLabel ||
+                                                readableText(
+                                                    theme?.primary || "#7c3aed"
+                                                ),
+                                        }}
+                                    >
+                                        {b.props?.buttonLabel ||
+                                            "ซื้อกาแฟให้เรา"}
+                                    </Link>
+                                )}
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1512,21 +1643,24 @@ export default function BlockRenderer({
                                     background: "rgba(0,0,0,0.4)",
                                 }}
                             >
-                            {embedUrl ? (
-                                <iframe
-                                    className="w-full h-full"
-                                    src={embedUrl}
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
-                            ) : (
-                                <div
-                                    className="p-6 text-center text-sm flex items-center justify-center h-full"
-                                    style={{ color: textColor, opacity: 0.6 }}
-                                >
-                                    ยังไม่ได้ใส่ลิงก์วิดีโอ
-                                </div>
-                            )}
+                                {embedUrl ? (
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={embedUrl}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <div
+                                        className="p-6 text-center text-sm flex items-center justify-center h-full"
+                                        style={{
+                                            color: textColor,
+                                            opacity: 0.6,
+                                        }}
+                                    >
+                                        ยังไม่ได้ใส่ลิงก์วิดีโอ
+                                    </div>
+                                )}
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1556,21 +1690,24 @@ export default function BlockRenderer({
                                     height: b.props?.height || "380px",
                                 }}
                             >
-                            {embedUrl ? (
-                                <iframe
-                                    className="w-full h-full"
-                                    src={embedUrl}
-                                    allow="encrypted-media"
-                                    allowFullScreen={false}
-                                />
-                            ) : (
-                                <div
-                                    className="p-6 text-center text-sm flex items-center justify-center h-full"
-                                    style={{ color: textColor, opacity: 0.6 }}
-                                >
-                                    ยังไม่ได้ใส่ลิงก์ Spotify
-                                </div>
-                            )}
+                                {embedUrl ? (
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={embedUrl}
+                                        allow="encrypted-media"
+                                        allowFullScreen={false}
+                                    />
+                                ) : (
+                                    <div
+                                        className="p-6 text-center text-sm flex items-center justify-center h-full"
+                                        style={{
+                                            color: textColor,
+                                            opacity: 0.6,
+                                        }}
+                                    >
+                                        ยังไม่ได้ใส่ลิงก์ Spotify
+                                    </div>
+                                )}
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1609,52 +1746,51 @@ export default function BlockRenderer({
                                     border: `1px solid ${blockBorder}`,
                                 }}
                             >
-                            <div className="text-center">
-                                <div className="grid grid-cols-4 gap-3 mb-4">
-                                    {[
-                                        { label: "วัน", value: days },
-                                        { label: "ชม.", value: hours },
-                                        { label: "นาที", value: minutes },
-                                        { label: "วินาที", value: seconds },
-                                    ].map((item, i) => (
-                                        <div key={i}>
-                                            <div
-                                                className="text-4xl font-bold mb-1"
-                                                style={{
-                                                    color: header,
-                                                    textShadow:
-                                                        "0 2px 8px rgba(0,0,0,0.3)",
-                                                }}
-                                            >
-                                                {String(item.value).padStart(
-                                                    2,
-                                                    "0"
-                                                )}
+                                <div className="text-center">
+                                    <div className="grid grid-cols-4 gap-3 mb-4">
+                                        {[
+                                            { label: "วัน", value: days },
+                                            { label: "ชม.", value: hours },
+                                            { label: "นาที", value: minutes },
+                                            { label: "วินาที", value: seconds },
+                                        ].map((item, i) => (
+                                            <div key={i}>
+                                                <div
+                                                    className="text-4xl font-bold mb-1"
+                                                    style={{
+                                                        color: header,
+                                                        textShadow:
+                                                            "0 2px 8px rgba(0,0,0,0.3)",
+                                                    }}
+                                                >
+                                                    {String(
+                                                        item.value
+                                                    ).padStart(2, "0")}
+                                                </div>
+                                                <div
+                                                    className="text-xs font-medium"
+                                                    style={{
+                                                        color: body,
+                                                        opacity: 0.8,
+                                                    }}
+                                                >
+                                                    {item.label}
+                                                </div>
                                             </div>
-                                            <div
-                                                className="text-xs font-medium"
-                                                style={{
-                                                    color: body,
-                                                    opacity: 0.8,
-                                                }}
-                                            >
-                                                {item.label}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {description && (
-                                    <div
-                                        className="text-base mt-3 font-medium"
-                                        style={{
-                                            color: body,
-                                            opacity: 0.9,
-                                        }}
-                                    >
-                                        {description}
+                                        ))}
                                     </div>
-                                )}
-                            </div>
+                                    {description && (
+                                        <div
+                                            className="text-base mt-3 font-medium"
+                                            style={{
+                                                color: body,
+                                                opacity: 0.9,
+                                            }}
+                                        >
+                                            {description}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1679,41 +1815,49 @@ export default function BlockRenderer({
                                     border: `1px solid ${blockBorder}`,
                                 }}
                             >
-                            <div
-                                className="text-lg font-semibold mb-3"
-                                style={{ color: header }}
-                            >
-                                {title}
-                            </div>
-                            {phoneNumber ? (
-                                <div className="space-y-3">
-                                    <div
-                                        className="bg-white p-4 rounded-lg inline-block"
-                                        style={{ border: "2px solid #e5e7eb" }}
-                                    >
-                                        {/* Placeholder for QR - in real implementation, generate QR from phoneNumber+amount */}
-                                        <div className="w-48 h-48 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                                            QR Code
-                                            <br />
-                                            {phoneNumber}
+                                <div
+                                    className="text-lg font-semibold mb-3"
+                                    style={{ color: header }}
+                                >
+                                    {title}
+                                </div>
+                                {phoneNumber ? (
+                                    <div className="space-y-3">
+                                        <div
+                                            className="bg-white p-4 rounded-lg inline-block"
+                                            style={{
+                                                border: "2px solid #e5e7eb",
+                                            }}
+                                        >
+                                            {/* Placeholder for QR - in real implementation, generate QR from phoneNumber+amount */}
+                                            <div className="w-48 h-48 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                                                QR Code
+                                                <br />
+                                                {phoneNumber}
+                                            </div>
+                                        </div>
+                                        <div
+                                            className="text-sm"
+                                            style={{
+                                                color: body,
+                                                opacity: 0.8,
+                                            }}
+                                        >
+                                            เบอร์: {phoneNumber}
+                                            {amount && ` | จำนวน: ฿${amount}`}
                                         </div>
                                     </div>
+                                ) : (
                                     <div
                                         className="text-sm"
-                                        style={{ color: body, opacity: 0.8 }}
+                                        style={{
+                                            color: textColor,
+                                            opacity: 0.6,
+                                        }}
                                     >
-                                        เบอร์: {phoneNumber}
-                                        {amount && ` | จำนวน: ฿${amount}`}
+                                        ยังไม่ได้กรอกเบอร์ PromptPay
                                     </div>
-                                </div>
-                            ) : (
-                                <div
-                                    className="text-sm"
-                                    style={{ color: textColor, opacity: 0.6 }}
-                                >
-                                    ยังไม่ได้กรอกเบอร์ PromptPay
-                                </div>
-                            )}
+                                )}
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1739,23 +1883,26 @@ export default function BlockRenderer({
                                     height: b.props?.height || "300px",
                                 }}
                             >
-                            {embedUrl && b.props?.apiKey ? (
-                                <iframe
-                                    className="w-full h-full"
-                                    src={embedUrl}
-                                    allowFullScreen
-                                    loading="lazy"
-                                />
-                            ) : (
-                                <div
-                                    className="p-6 text-center text-sm flex items-center justify-center h-full"
-                                    style={{ color: textColor, opacity: 0.6 }}
-                                >
-                                    {location
-                                        ? "ต้องการ Google Maps API Key"
-                                        : "ยังไม่ได้ใส่ตำแหน่ง"}
-                                </div>
-                            )}
+                                {embedUrl && b.props?.apiKey ? (
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={embedUrl}
+                                        allowFullScreen
+                                        loading="lazy"
+                                    />
+                                ) : (
+                                    <div
+                                        className="p-6 text-center text-sm flex items-center justify-center h-full"
+                                        style={{
+                                            color: textColor,
+                                            opacity: 0.6,
+                                        }}
+                                    >
+                                        {location
+                                            ? "ต้องการ Google Maps API Key"
+                                            : "ยังไม่ได้ใส่ตำแหน่ง"}
+                                    </div>
+                                )}
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -1778,60 +1925,60 @@ export default function BlockRenderer({
                                     border: `1px solid ${blockBorder}`,
                                 }}
                             >
-                            <div
-                                className="text-lg font-semibold mb-4"
-                                style={{ color: header }}
-                            >
-                                {title}
-                            </div>
-                            <form
-                                className="space-y-3"
-                                onSubmit={(e) => e.preventDefault()}
-                            >
-                                <input
-                                    type="text"
-                                    placeholder="ชื่อ"
-                                    className="w-full px-4 py-2 rounded-lg text-sm"
-                                    style={{
-                                        background: "rgba(0,0,0,0.2)",
-                                        border: `1px solid ${blockBorder}`,
-                                        color: body,
-                                    }}
-                                />
-                                <input
-                                    type="email"
-                                    placeholder="อีเมล"
-                                    className="w-full px-4 py-2 rounded-lg text-sm"
-                                    style={{
-                                        background: "rgba(0,0,0,0.2)",
-                                        border: `1px solid ${blockBorder}`,
-                                        color: body,
-                                    }}
-                                />
-                                <textarea
-                                    placeholder="ข้อความ"
-                                    rows={4}
-                                    className="w-full px-4 py-2 rounded-lg text-sm"
-                                    style={{
-                                        background: "rgba(0,0,0,0.2)",
-                                        border: `1px solid ${blockBorder}`,
-                                        color: body,
-                                    }}
-                                />
-                                <button
-                                    type="submit"
-                                    className="w-full px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                                    style={{
-                                        background: buttonBg,
-                                        color:
-                                            getTxt("buttonLabel") ||
-                                            readableText(buttonBg),
-                                        borderRadius: br,
-                                    }}
+                                <div
+                                    className="text-lg font-semibold mb-4"
+                                    style={{ color: header }}
                                 >
-                                    ส่งข้อความ
-                                </button>
-                            </form>
+                                    {title}
+                                </div>
+                                <form
+                                    className="space-y-3"
+                                    onSubmit={(e) => e.preventDefault()}
+                                >
+                                    <input
+                                        type="text"
+                                        placeholder="ชื่อ"
+                                        className="w-full px-4 py-2 rounded-lg text-sm"
+                                        style={{
+                                            background: "rgba(0,0,0,0.2)",
+                                            border: `1px solid ${blockBorder}`,
+                                            color: body,
+                                        }}
+                                    />
+                                    <input
+                                        type="email"
+                                        placeholder="อีเมล"
+                                        className="w-full px-4 py-2 rounded-lg text-sm"
+                                        style={{
+                                            background: "rgba(0,0,0,0.2)",
+                                            border: `1px solid ${blockBorder}`,
+                                            color: body,
+                                        }}
+                                    />
+                                    <textarea
+                                        placeholder="ข้อความ"
+                                        rows={4}
+                                        className="w-full px-4 py-2 rounded-lg text-sm"
+                                        style={{
+                                            background: "rgba(0,0,0,0.2)",
+                                            border: `1px solid ${blockBorder}`,
+                                            color: body,
+                                        }}
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="w-full px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                                        style={{
+                                            background: buttonBg,
+                                            color:
+                                                getTxt("buttonLabel") ||
+                                                readableText(buttonBg),
+                                            borderRadius: br,
+                                        }}
+                                    >
+                                        ส่งข้อความ
+                                    </button>
+                                </form>
                             </div>
                             {renderSep(idx, b.type)}
                         </div>
@@ -2183,7 +2330,6 @@ export default function BlockRenderer({
                         บล็อกชนิด {b.type} ยังไม่รองรับในพรีวิว
                     </div>
                 );
-
             })}
             {/* {separated && groupedBlocks.length > 1 && (
                 // Render dividers between items by overlaying hr using CSS gaps would require wrapping each.

@@ -339,8 +339,7 @@ router.post(
                                     fields: [
                                         {
                                             name: "ผู้ใช้",
-                                            value:
-                                                user.username || user.email,
+                                            value: user.username || user.email,
                                             inline: true,
                                         },
                                         {

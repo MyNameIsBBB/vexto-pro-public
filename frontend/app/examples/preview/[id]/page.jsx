@@ -8,15 +8,15 @@ import Link from "next/link";
 
 // Import same profile data
 const streamerProfile = {
-    displayName: "NOVA Gaming",
+    displayName: "Peeratus Gaming",
     avatarUrl:
         "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&auto=format&fit=crop",
     bio: "Professional Gamer & Content Creator",
     socials: [
-        { label: "Twitch", url: "https://twitch.tv/nova" },
-        { label: "YouTube", url: "https://youtube.com/@nova" },
-        { label: "Instagram", url: "https://instagram.com/nova" },
-        { label: "Discord", url: "https://discord.gg/nova" },
+        { label: "Twitch", url: "#" },
+        { label: "YouTube", url: "#" },
+        { label: "Instagram", url: "#" },
+        { label: "Discord", url: "#" },
     ],
     theme: {
         primary: "#7c3aed",
@@ -32,10 +32,10 @@ const streamerProfile = {
             id: "pr1",
             type: "profile",
             props: {
-                name: "NOVA Gamer",
+                name: "Peeratus Gamer",
                 role: "Pro Gamer & Streamer",
                 location: "Bangkok, Thailand",
-                email: "contact@novagaming.com",
+                email: "contact@peeratusgaming.com",
                 bio: "ว่าง ๆ ก็มาเปิดสตรีมเล่นเกม ส่วนใหญ่เล่น Valorant กับ Apex ชอบเล่นกับเพื่อน ๆ พูดคุยกับคนดู มีเรื่องสนุก ๆ เล่าให้ฟังบ่อย ๆ 😊",
             },
         },
@@ -57,7 +57,7 @@ const streamerProfile = {
             type: "link",
             props: {
                 label: "🟣 ตามดูสดได้ที่ Twitch",
-                url: "https://twitch.tv/nova",
+                url: "#",
                 size: "large",
             },
         },
@@ -66,7 +66,7 @@ const streamerProfile = {
             type: "link",
             props: {
                 label: "▶️ คลิปไฮไลท์ที่ YouTube",
-                url: "https://youtube.com/@nova",
+                url: "#",
                 size: "large",
             },
         },
@@ -158,7 +158,7 @@ const streamerProfile = {
                 description:
                     "ถ้าอยากเห็นสตรีมที่ดีขึ้น อุปกรณ์ที่ดีขึ้น ทุกความช่วยเหลือมีค่ามากเลยจริง ๆ แค่มาคุยด้วยก็มีความสุขมากแล้ว 🙏",
                 buttonLabel: "ซื้อกาแฟให้ซักแก้ว ☕",
-                url: "https://ko-fi.com/nova",
+                url: "#",
             },
         },
         { id: "d6", type: "divider", props: {} },
@@ -167,21 +167,21 @@ const streamerProfile = {
             type: "quote",
             props: {
                 text: "เล่นเพื่อความสนุก ชนะเพื่อความภูมิใจ แพ้ก็ไม่เป็นไร แค่อย่าเลิกพยายาม",
-                author: "— NOVA",
+                author: "— Peeratus Gamer",
             },
         },
     ],
 };
 
+// Example 2: Personal/Developer
 const personalProfile = {
     displayName: "Peeratus Dev",
-    avatarUrl:
-        "https://scontent.fbkk31-1.fna.fbcdn.net/v/t39.30808-6/515921538_122113506404911951_4184501037251844362_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=_r7bn3KgGHUQ7kNvwFYyIer&_nc_oc=AdnGHFAltY-_vJc6z0IsevUhRS4U4CiY7Go1gEQp8ecWnDMnFzCFnAdd55rHXw56MX4&_nc_zt=23&_nc_ht=scontent.fbkk31-1.fna&_nc_gid=USzMo_nXrVvV9kPRGDuIMA&oh=00_AfhP6McLKVWAp9HWJDwZH8lsxkWG5pB6CDW0451hug3pfA&oe=690E47DC",
+    avatarUrl: "/images/image.png",
     bio: "Full Stack Developer & Designer",
     socials: [
-        { label: "GitHub", url: "https://github.com/yourusername" },
-        { label: "LinkedIn", url: "https://linkedin.com/in/you" },
-        { label: "X", url: "https://x.com/you" },
+        { label: "GitHub", url: "#" },
+        { label: "LinkedIn", url: "#" },
+        { label: "X", url: "#" },
     ],
     theme: {
         primary: "#ec4899",
@@ -262,7 +262,7 @@ const personalProfile = {
                 description:
                     "ทุกการสนับสนุนเป็นกำลังใจในการสร้างสรรค์ผลงานต่อไป",
                 buttonLabel: "Buy me a coffee",
-                url: "https://ko-fi.com/example",
+                url: "#",
             },
         },
         { id: "d4", type: "divider", props: {} },
@@ -277,24 +277,26 @@ const personalProfile = {
     ],
 };
 
+// Example 3: Shop/Spa/Service
 const shopProfile = {
     displayName: "สุขสบาย สปา & นวด",
     avatarUrl:
         "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=600&auto=format&fit=crop",
     bio: "สปาและนวดแผนไทย ด้วยความเอาใจใส่และมาตรฐานสูง",
     socials: [
-        { label: "Facebook", url: "https://facebook.com/spa" },
-        { label: "Line", url: "https://line.me/spa" },
-        { label: "Phone", url: "tel:0812345678" },
-        { label: "Instagram", url: "https://instagram.com/spa" },
+        { label: "Facebook", url: "#" },
+        { label: "Line", url: "#" },
+        { label: "Phone", url: "#" },
+        { label: "Instagram", url: "#" },
     ],
     theme: {
-        primary: "#0d9488",
-        accent: "#0f766e",
-        background: "#f8fafc",
-        textColor: "#0f172a",
-        borderRadius: "sharp",
-        fontFamily: "sarabun",
+        // Muted teal formal palette
+        primary: "#0d9488", // teal-600
+        accent: "#0f766e", // teal-700
+        background: "#f8fafc", // light bg
+        textColor: "#0f172a", // slate-900
+        borderRadius: "sharp", // formal straight corners
+        fontFamily: "sarabun", // formal Thai font
         backgroundImage: null,
         backgroundScope: "full",
         variant: "formal",
@@ -415,7 +417,7 @@ const shopProfile = {
                 description:
                     "จองผ่านออนไลน์รับส่วนลดทันที | รับชำระเงินสด, PromptPay, บัตรเครดิต",
                 buttonLabel: "จองเลย 📅",
-                url: "https://line.me/spa",
+                url: "#",
             },
         },
         { id: "d6", type: "divider", props: {} },
@@ -555,6 +557,7 @@ export default function PreviewPage() {
                                     <SocialIcons
                                         items={profile.socials}
                                         theme={profile.theme}
+                                        disableLinks={true}
                                     />
                                 </div>
                             )}
@@ -564,6 +567,7 @@ export default function PreviewPage() {
                                 <BlockRenderer
                                     blocks={profile.blocks || []}
                                     theme={profile.theme}
+                                    disableLinks={true}
                                 />
                             </div>
                         </div>

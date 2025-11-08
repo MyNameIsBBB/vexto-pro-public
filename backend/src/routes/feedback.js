@@ -113,7 +113,12 @@ router.post("/", async (req, res) => {
                 .padEnd(5, "☆");
             const embed = {
                 title: "📝 Feedback ใหม่",
-                color: ratingNum >= 4 ? 0x00ff00 : ratingNum >= 3 ? 0xffaa00 : 0xff0000,
+                color:
+                    ratingNum >= 4
+                        ? 0x00ff00
+                        : ratingNum >= 3
+                        ? 0xffaa00
+                        : 0xff0000,
                 fields: [
                     {
                         name: "ผู้ส่ง",

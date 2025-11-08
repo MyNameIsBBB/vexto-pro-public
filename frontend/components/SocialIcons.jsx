@@ -13,7 +13,11 @@ import {
 import { FaXTwitter } from "react-icons/fa6";
 import Link from "next/link";
 
-export default function SocialIcons({ items = [], theme = {} }) {
+export default function SocialIcons({
+    items = [],
+    theme = {},
+    disableLinks = false,
+}) {
     const iconFor = (label) => {
         const l = String(label || "").toLowerCase();
         if (l.includes("instagram")) return <FaInstagram className="h-4 w-4" />;
@@ -44,6 +48,27 @@ export default function SocialIcons({ items = [], theme = {} }) {
                 .filter((s) => !!s?.url)
                 .map((s, idx) => {
                     const external = isExternal(s.url);
+                    const isHash = s.url === "#";
+
+                    if (disableLinks || isHash) {
+                        return (
+                            <button
+                                key={idx}
+                                className="inline-flex items-center justify-center h-11 w-11 rounded-full transition-all cursor-default opacity-50"
+                                style={{
+                                    color: iconColor,
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    border: `1px solid ${borderColor}`,
+                                }}
+                                title={s.label}
+                                aria-label={s.label}
+                                disabled
+                            >
+                                {iconFor(s.label)}
+                            </button>
+                        );
+                    }
+
                     return (
                         <Link
                             key={idx}

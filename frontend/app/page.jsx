@@ -116,12 +116,18 @@ export default function HomePage() {
                     {[
                         {
                             label: "ผู้ใช้งาน",
-                            value: stats.users > 0 ? stats.users.toLocaleString() : "0",
+                            value:
+                                stats.users > 0
+                                    ? stats.users.toLocaleString() + "+"
+                                    : "0",
                             sub: "และเพิ่มขึ้นทุกวัน",
                         },
                         {
                             label: "โปรไฟล์ที่สร้าง",
-                            value: stats.profiles > 0 ? stats.profiles.toLocaleString() : "0",
+                            value:
+                                stats.profiles > 0
+                                    ? stats.profiles.toLocaleString() + "+"
+                                    : "0",
                             sub: "ครีเอเตอร์ ร้านค้า และบุคคลทั่วไป",
                         },
                         {
@@ -302,8 +308,9 @@ export default function HomePage() {
                                                 เกี่ยวกับ
                                             </div>
                                             <div className="mt-1 text-sm">
-                                                สวัสดี! ผม peeratus สตรีมเกมแบบสนุก
-                                                ๆ ทุกคืนศุกร์-อาทิตย์
+                                                สวัสดี! ผม peeratus
+                                                สตรีมเกมแบบสนุก ๆ
+                                                ทุกคืนศุกร์-อาทิตย์
                                             </div>
                                         </div>
                                     </div>
