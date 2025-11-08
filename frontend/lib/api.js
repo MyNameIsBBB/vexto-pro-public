@@ -47,3 +47,23 @@ export async function checkUsername(username, currentUsername = null) {
         return { available: false, message: "เกิดข้อผิดพลาด" };
     }
 }
+
+// Stripe PromptPay Payment API
+export const payment = {
+    // Create Stripe Payment Intent with PromptPay
+    async createPayment(amount, grantType, itemId = null) {
+        return api.post("/payment/create", {
+            amount,
+            grantType,
+            itemId,
+        });
+    },
+
+    // Verify Stripe Payment Intent
+    async verifyPayment(payment_intent_id, paymentId = null) {
+        return api.post("/payment/verify", {
+            payment_intent_id,
+            paymentId,
+        });
+    },
+};

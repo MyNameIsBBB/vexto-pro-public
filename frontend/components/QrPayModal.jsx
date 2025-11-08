@@ -6,27 +6,28 @@ export default function QrPayModal({
     onClose,
     qrBase64,
     amount,
-    ref1,
-    timeOut,
-    onConfirm,
-    confirming,
+    paymentId,
+    expiresAt,
+    onVerify,
+    verifying,
     status,
+    transactionId,
+    onTransactionIdChange,
 }) {
-    const [secondsLeft, setSecondsLeft] = useState(timeOut || 0);
+    const [secondsLeft, setSecondsLeft] = useState(0);
 
     useEffect(() => {
-        setSecondsLeft(timeOut || 0);
-    }, [timeOut, open]);
-
-    useEffect(() => {
-        if (!open) return;
-        if (!secondsLeft || secondsLeft <= 0) return;
-        const id = setInterval(
-            () => setSecondsLeft((s) => Math.max(0, s - 1)),
-            1000
-        );
+        if (!expiresAt) return;
+        const calcSeconds = () => {
+            const diff = new Date(expiresAt) - new Date();
+            return Math.max(0, Math.floor(diff / 1000));
+        };
+        setSecondsLeft(calcSeconds());
+        const id = setInterval(() => {
+            setSecondsLeft(calcSeconds());
+        }, 1000);
         return () => clearInterval(id);
-    }, [open, secondsLeft]);
+    }, [expiresAt, open]);
 
     if (!open) return null;
 
@@ -59,15 +60,14 @@ export default function QrPayModal({
                         ยอดชำระ:{" "}
                         <span className="font-semibold text-white">
                             ฿{amount}
-                        </span>{" "}
-                        · อ้างอิง: <span className="text-white/90">{ref1}</span>
+                        </span>
                     </div>
                     {qrBase64 ? (
                         <div className="flex flex-col items-center">
                             <img
                                 src={`data:image/png;base64,${qrBase64}`}
                                 alt="PromptPay QR"
-                                className="w-72 h-72 rounded-xl border border-white/10 bg-white"
+                                className="w-72 h-72 rounded-xl border border-white/10 bg-white p-4"
                             />
                             <div className="mt-3 text-sm text-white/70">
                                 หมดเวลาใน: {prettyTime()}
@@ -79,22 +79,43 @@ export default function QrPayModal({
                         </div>
                     )}
 
-                    <div className="mt-6 flex items-center gap-3">
+                    <div className="mt-6 space-y-4">
+                        <div>
+                            <label className="text-sm text-white/60 mb-2 block">
+                                หมายเลขอ้างอิงจากสลิป (Transaction ID) -
+                                ไม่บังคับ
+                            </label>
+                            <input
+                                type="text"
+                                value={transactionId}
+                                onChange={(e) =>
+                                    onTransactionIdChange(e.target.value)
+                                }
+                                placeholder="กรอกหมายเลขอ้างอิงหากต้องการ (ไม่จำเป็น)"
+                                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500 focus:outline-none text-white"
+                            />
+                            <p className="mt-1 text-xs text-white/50">
+                                Stripe PromptPay จะตรวจสอบการชำระเงินอัตโนมัติ -
+                                ไม่จำเป็นต้องกรอก Transaction ID
+                            </p>
+                        </div>
+
                         <button
-                            onClick={onConfirm}
-                            disabled={confirming}
-                            className="px-5 py-3 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] text-white text-sm font-medium disabled:opacity-60"
+                            onClick={onVerify}
+                            disabled={verifying}
+                            className="w-full px-5 py-3 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] text-white text-sm font-medium disabled:opacity-60"
                         >
-                            {confirming
-                                ? "กำลังตรวจสอบ..."
-                                : "ฉันโอนแล้ว ตรวจสอบ"}
+                            {verifying
+                                ? "กำลังตรวจสอบการชำระเงิน..."
+                                : "ตรวจสอบการชำระเงิน"}
                         </button>
+
                         {status && (
                             <div
-                                className={`text-sm ${
+                                className={`text-sm text-center p-3 rounded-xl ${
                                     status.ok
-                                        ? "text-green-400"
-                                        : "text-yellow-300"
+                                        ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                        : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
                                 }`}
                             >
                                 {status.message}

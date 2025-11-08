@@ -2,42 +2,7 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const User = require("../models/User");
-
-const BASES = [
-    "https://www.tmweasy.com/apipp.php",
-    "https://tmwallet.thaighost.net/apipp.php",
-];
-
-async function tmweasyGet(params) {
-    const { URL } = require("url");
-    let lastErr;
-    for (const base of BASES) {
-        try {
-            const u = new URL(base);
-            Object.entries(params).forEach(([k, v]) =>
-                u.searchParams.set(k, String(v))
-            );
-            const res = await fetch(u.toString(), { method: "GET" });
-            const text = await res.text();
-            // Try JSON first
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                // Some APIs may return query-like pairs; attempt naive parse
-                const obj = {};
-                text.split(/&|\n/).forEach((pair) => {
-                    const [k, v] = pair.split("=");
-                    if (k) obj[k.trim()] = decodeURIComponent(v || "");
-                });
-                if (Object.keys(obj).length > 0) return obj;
-                throw new Error("Unexpected response format");
-            }
-        } catch (err) {
-            lastErr = err;
-        }
-    }
-    throw lastErr || new Error("TMWEASY request failed");
-}
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 function requireEnv(name) {
     const v = process.env[name];
@@ -45,124 +10,125 @@ function requireEnv(name) {
     return v;
 }
 
-// Create a payment session: Step 1 (create_pay) + Step 2 (detail_pay)
-router.post("/session", auth, async (req, res, next) => {
-    try {
-        const username = requireEnv("TMW_USER");
-        const password = requireEnv("TMW_PASSWORD");
-        const con_id = requireEnv("TMW_CON_ID");
-        const promptpay_id = requireEnv("TMW_PROMPTPAY_ID");
-        const type = process.env.TMW_TYPE || "01"; // 01: phone, 03: e-wallet
+// Helper function to create PromptPay QR with reference data
+function createPromptPayQR(phoneNumber, amount, ref) {
+    const generatePayload = require("promptpay-qr");
+    const QRCode = require("qrcode");
 
-        const { amount, ref1: ref1Raw, grantType, itemId } = req.body || {};
-        const amt = parseInt(amount, 10);
+    // Generate PromptPay payload with reference
+    const payload = generatePayload(phoneNumber, {
+        amount: amount,
+        additionalData: ref.slice(0, 25), // PromptPay supports up to 25 chars
+    });
+
+    return QRCode.toDataURL(payload);
+}
+
+// Create Stripe Payment Intent with PromptPay
+router.post("/create", auth, async (req, res, next) => {
+    try {
+        const { amount, grantType, itemId } = req.body || {};
+
+        const amt = parseFloat(amount);
         if (!amt || amt < 1) {
             return res
                 .status(400)
-                .json({ error: "amount ต้องเป็นจำนวนเต็มบาท" });
+                .json({ error: "amount ต้องเป็นจำนวนเงินที่ถูกต้อง" });
         }
-        // Build ref1 including user and grant info (short and parseable)
-        const safeRaw = (ref1Raw || "").toString().slice(0, 40);
+
+        // Build payment reference
+        const paymentId = `${Date.now()}-${req.userId}`;
         const t =
             grantType === "pro" ? "pro" : grantType === "item" ? "item" : "raw";
         const i = t === "item" && itemId ? String(itemId).slice(0, 40) : "-";
-        const ref1 = `u:${req.userId};t:${t};i:${i};r:${safeRaw}`;
+        const ref = `u:${req.userId};t:${t};i:${i};id:${paymentId}`;
 
-        // Step 1: create id_pay
-        const createResp = await tmweasyGet({
-            username,
-            password,
-            con_id,
-            amount: amt,
-            ref1,
-            method: "create_pay",
+        // Create Stripe Payment Intent with PromptPay
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.round(amt * 100), // Convert to satang (cents)
+            currency: "thb",
+            payment_method_types: ["promptpay"],
+            metadata: {
+                userId: req.userId,
+                grantType: t,
+                itemId: i || "",
+                paymentId: paymentId,
+                ref: ref,
+            },
+            description: `Vexto ${
+                t === "pro"
+                    ? "Pro Subscription"
+                    : t === "item"
+                    ? `Item: ${i}`
+                    : "Payment"
+            }`,
         });
-        if (String(createResp.status) !== "1" || !createResp.id_pay) {
-            return res.status(400).json({
-                error: createResp.msg || "create_pay ล้มเหลว",
-                raw: createResp,
-            });
-        }
-        const id_pay = createResp.id_pay;
-
-        // Step 2: details + QR
-        const detailResp = await tmweasyGet({
-            username,
-            password,
-            con_id,
-            id_pay,
-            type,
-            promptpay_id,
-            method: "detail_pay",
-        });
-        if (String(detailResp.status) !== "1") {
-            return res.status(400).json({
-                error: detailResp.msg || "detail_pay ล้มเหลว",
-                raw: detailResp,
-            });
-        }
 
         return res.json({
-            id_pay,
-            ref1,
+            paymentId,
+            payment_intent_id: paymentIntent.id,
+            client_secret: paymentIntent.client_secret,
             amount: amt,
-            amount_check: detailResp.amount_check,
-            time_out: detailResp.time_out,
-            qr_image_base64: detailResp.qr_image_base64,
+            currency: "thb",
+            ref,
+            expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min timeout
+            stripe_status: paymentIntent.status,
+            // Stripe will handle QR code generation automatically
+            stripe_publishable_key: process.env.STRIPE_PUBLISHABLE_KEY,
         });
     } catch (e) {
+        console.error("Stripe payment creation error:", e);
         next(e);
     }
 });
 
-// Confirm payment (Step 3)
-router.post("/confirm", auth, async (req, res, next) => {
+// Verify Stripe Payment Intent
+router.post("/verify", auth, async (req, res, next) => {
     try {
-        const username = requireEnv("TMW_USER");
-        const password = requireEnv("TMW_PASSWORD");
-        const con_id = requireEnv("TMW_CON_ID");
-        const accode = requireEnv("TMW_ACCODE");
-        const account_no = requireEnv("TMW_ACCOUNT_NO");
-        const { id_pay } = req.body || {};
-        if (!id_pay) return res.status(400).json({ error: "id_pay จำเป็น" });
+        const { payment_intent_id, paymentId } = req.body || {};
 
-        const ip = (
-            req.headers["x-forwarded-for"] ||
-            req.socket.remoteAddress ||
-            ""
-        ).toString();
-        const confirmResp = await tmweasyGet({
-            username,
-            password,
-            con_id,
-            id_pay,
-            accode,
-            account_no,
-            ip,
-            method: "confirm",
-        });
-        if (String(confirmResp.status) !== "1") {
+        if (!payment_intent_id && !paymentId) {
             return res.status(400).json({
-                error: confirmResp.msg || "ยืนยันการโอนล้มเหลว",
-                raw: confirmResp,
+                error: "กรุณาระบุ payment_intent_id หรือ paymentId",
             });
         }
-        // Parse ref1: u:<userId>;t:<pro|item|raw>;i:<itemId|->;r:<raw>
-        const ref1 = String(confirmResp.ref1 || "");
-        const parts = Object.fromEntries(
-            ref1.split(";").map((seg) => {
-                const [k, v] = seg.split(":");
-                return [k, v];
-            })
-        );
-        const userId = parts.u;
-        const type = parts.t;
-        const item = parts.i;
 
-        // Grant entitlements only if matches the current requester
+        // Retrieve Payment Intent from Stripe
+        const paymentIntent = await stripe.paymentIntents.retrieve(
+            payment_intent_id
+        );
+
+        if (!paymentIntent) {
+            return res.status(400).json({
+                error: "ไม่พบการชำระเงิน",
+            });
+        }
+
+        // Check payment status
+        if (paymentIntent.status !== "succeeded") {
+            return res.status(400).json({
+                error: "การชำระเงินยังไม่สมบูรณ์",
+                status: paymentIntent.status,
+                details: {
+                    id: paymentIntent.id,
+                    status: paymentIntent.status,
+                    amount: paymentIntent.amount / 100,
+                    currency: paymentIntent.currency,
+                },
+            });
+        }
+
+        // Get metadata from Payment Intent
+        const metadata = paymentIntent.metadata;
+        const userId = metadata.userId;
+        const type = metadata.grantType;
+        const item = metadata.itemId;
+
+        // Verify user matches
         if (userId && userId === req.userId) {
             const user = await User.findById(userId);
             if (user) {
+                // Grant entitlements
                 if (type === "pro") {
                     user.isPro = true;
                 } else if (type === "item" && item && item !== "-") {
@@ -171,24 +137,115 @@ router.post("/confirm", auth, async (req, res, next) => {
                     }
                 }
                 await user.save();
+
+                return res.json({
+                    ok: true,
+                    verified: true,
+                    granted: {
+                        userId,
+                        type,
+                        item: item || null,
+                    },
+                    transaction: {
+                        payment_intent_id: paymentIntent.id,
+                        amount: paymentIntent.amount / 100,
+                        currency: paymentIntent.currency,
+                        status: paymentIntent.status,
+                        payment_method: paymentIntent.payment_method,
+                        created: new Date(
+                            paymentIntent.created * 1000
+                        ).toISOString(),
+                        metadata: paymentIntent.metadata,
+                    },
+                });
             }
         }
 
-        return res.json({
-            ok: true,
-            id_pay,
-            amount: confirmResp.amount,
-            date_pay: confirmResp.date_pay,
-            ref1: confirmResp.ref1,
-            granted: {
-                userId: userId || null,
-                type: type || null,
-                item: item || null,
-            },
+        return res.status(400).json({
+            error: "ไม่สามารถอัพเดทสิทธิ์ได้ หรือ userId ไม่ตรงกัน",
         });
     } catch (e) {
+        console.error("Stripe payment verification error:", e);
         next(e);
     }
 });
+
+// Stripe Webhook handler (for real-time payment updates)
+router.post(
+    "/webhook",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+        const sig = req.headers["stripe-signature"];
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+        let event;
+
+        try {
+            event = stripe.webhooks.constructEvent(
+                req.body,
+                sig,
+                webhookSecret
+            );
+        } catch (err) {
+            console.error(
+                "Webhook signature verification failed:",
+                err.message
+            );
+            return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
+
+        // Handle the event
+        switch (event.type) {
+            case "payment_intent.succeeded":
+                const paymentIntent = event.data.object;
+                console.log("Payment succeeded:", paymentIntent.id);
+
+                // Auto-grant permissions when payment succeeds
+                const metadata = paymentIntent.metadata;
+                if (metadata.userId) {
+                    try {
+                        const user = await User.findById(metadata.userId);
+                        if (user) {
+                            if (metadata.grantType === "pro") {
+                                user.isPro = true;
+                            } else if (
+                                metadata.grantType === "item" &&
+                                metadata.itemId &&
+                                metadata.itemId !== "-"
+                            ) {
+                                if (
+                                    !user.purchasedItems.includes(
+                                        metadata.itemId
+                                    )
+                                ) {
+                                    user.purchasedItems.push(metadata.itemId);
+                                }
+                            }
+                            await user.save();
+                            console.log(
+                                "Auto-granted permissions for user:",
+                                metadata.userId
+                            );
+                        }
+                    } catch (error) {
+                        console.error(
+                            "Error auto-granting permissions:",
+                            error
+                        );
+                    }
+                }
+                break;
+
+            case "payment_intent.payment_failed":
+                console.log("Payment failed:", event.data.object.id);
+                break;
+
+            default:
+                console.log(`Unhandled event type ${event.type}`);
+        }
+
+        res.json({ received: true });
+    }
+);
 
 module.exports = router;
