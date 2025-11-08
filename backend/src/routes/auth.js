@@ -370,9 +370,23 @@ router.get("/google/callback", async (req, res) => {
             }),
         });
         const tokenJson = await tokenRes.json();
+
+        console.log("Google token exchange response:", {
+            status: tokenRes.status,
+            ok: tokenRes.ok,
+            data: tokenJson,
+            redirectUri: redirectUri,
+        });
+
         if (!tokenRes.ok || !tokenJson.access_token) {
             console.error("Google token error", tokenJson);
-            return res.status(400).json({ error: "Failed to get token" });
+            return res.status(400).json({
+                error: "Failed to get token",
+                details:
+                    tokenJson.error_description ||
+                    tokenJson.error ||
+                    "Unknown error",
+            });
         }
 
         const accessToken = tokenJson.access_token;
@@ -460,7 +474,7 @@ router.get("/google/callback", async (req, res) => {
         }
 
         const token = signToken(user._id.toString());
-        
+
         // Return JSON instead of redirect for frontend to handle
         return res.json({
             token,

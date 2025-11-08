@@ -30,16 +30,33 @@ export default function LoginPage() {
         const clientId = "1435829670275710976";
         const redirectUri = `${window.location.origin}/auth/discord/callback`;
         const scope = encodeURIComponent("identify email");
-        const url = `https://discord.com/api/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
+        const url = `https://discord.com/api/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
+            redirectUri
+        )}&scope=${scope}`;
         window.location.href = url;
     }
 
     function loginWithGoogle() {
         // Google redirects directly to frontend, then frontend calls backend
-        const clientId = "YOUR_GOOGLE_CLIENT_ID"; // จะต้องใส่ค่าจริง
+        const clientId =
+            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+
+        if (clientId === "YOUR_GOOGLE_CLIENT_ID") {
+            alert(
+                "Google OAuth ยังไม่ได้ตั้งค่า กรุณาใส่ GOOGLE_CLIENT_ID ใน .env"
+            );
+            return;
+        }
+
         const redirectUri = `${window.location.origin}/auth/google/callback`;
-        const scope = encodeURIComponent("openid email profile");
-        const url = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&access_type=offline&prompt=consent`;
+        const scope = "openid email profile";
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${encodeURIComponent(
+            clientId
+        )}&redirect_uri=${encodeURIComponent(
+            redirectUri
+        )}&scope=${encodeURIComponent(
+            scope
+        )}&access_type=offline&prompt=consent`;
         window.location.href = url;
     }
 

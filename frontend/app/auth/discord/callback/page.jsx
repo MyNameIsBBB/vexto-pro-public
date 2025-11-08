@@ -10,9 +10,14 @@ function DiscordCallbackContent() {
     const { loadProfile } = useAuth();
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
+    const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
         const processCallback = async () => {
+            // Prevent duplicate processing
+            if (processing) return;
+            setProcessing(true);
+
             const code = search.get("code");
             const token = search.get("token");
 
@@ -61,12 +66,17 @@ function DiscordCallbackContent() {
                         throw new Error(data.error || "Failed to authenticate");
                     }
 
+                    console.log("Token received, loading profile...");
                     setToken(data.token);
                     await loadProfile();
+                    console.log("Profile loaded, redirecting...");
                     router.replace("/edit");
                 } catch (e) {
                     console.error("Discord auth error:", e);
-                    setError(e.message || "การเข้าสู่ระบบล้มเหลว");
+                    // Only show error if it's a real failure, not just slow loading
+                    if (e.message !== "Failed to authenticate") {
+                        setError(e.message || "การเข้าสู่ระบบล้มเหลว");
+                    }
                     setLoading(false);
                 }
             } else {
@@ -80,9 +90,12 @@ function DiscordCallbackContent() {
     }, [search, router, loadProfile]);
 
     return (
-        <main className="min-h-screen grid place-items-center p-8">
+        <main className="min-h-screen grid place-items-center p-8 bg-[#0b1020]">
             <div className="text-center">
-                <h1 className="text-xl font-semibold mb-2">
+                <div className="mb-6">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#5865F2] mx-auto"></div>
+                </div>
+                <h1 className="text-2xl font-semibold mb-3 text-white">
                     กำลังเชื่อมต่อ Discord...
                 </h1>
                 {error ? (
@@ -90,15 +103,20 @@ function DiscordCallbackContent() {
                         <p className="text-red-400 mb-4">{error}</p>
                         <button
                             onClick={() => router.push("/login")}
-                            className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700"
+                            className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 transition"
                         >
                             กลับไปหน้าเข้าสู่ระบบ
                         </button>
                     </div>
                 ) : (
-                    <p className="text-white/70">
-                        โปรดรอสักครู่ ระบบกำลังพาคุณไปยังหน้าสร้างโปรไฟล์
-                    </p>
+                    <div className="space-y-2">
+                        <p className="text-white/70">
+                            โปรดรอสักครู่ ระบบกำลังยืนยันตัวตน...
+                        </p>
+                        <p className="text-white/50 text-sm">
+                            อาจใช้เวลาสักครู่ โปรดอย่าปิดหน้าต่างนี้
+                        </p>
+                    </div>
                 )}
             </div>
         </main>
