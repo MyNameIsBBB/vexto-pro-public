@@ -9,16 +9,22 @@
     --accent: #10b981;
 }
 
-html,
-body,
-#__next {
-    height: 100%;
-}
+/* Avoid nested scrollbars: don't lock root to height:100% */
+/* Let body own the vertical scroll with at least viewport height */
+/* Removed previous html/body/#__next height:100% to prevent double scrollbars */
 
 body {
     background: var(--bg);
     color: var(--fg);
     font-family: var(--font-prompt), system-ui, sans-serif;
+    min-height: 100vh;
+}
+
+/* Prevent horizontal overflow on all pages and ensure consistent dark root bg */
+html,
+body {
+    /* unify overflow control */
+    overflow-x: hidden;
 }
 
 .container {
@@ -28,6 +34,11 @@ body {
 /* Smooth scrolling */
 html {
     scroll-behavior: smooth;
+}
+
+/* iOS momentum scroll for inner scrollers */
+.custom-scroll {
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Subtle custom scrollbar (WebKit) */
@@ -97,11 +108,6 @@ body::-webkit-scrollbar-thumb:active,
     background-color: rgba(255, 255, 255, 0.55);
 }
 
-/* iOS momentum scroll for inner scrollers */
-.custom-scroll {
-    -webkit-overflow-scrolling: touch;
-}
-
 /* Modal animations */
 @keyframes fadeIn {
     from {
@@ -117,3 +123,5 @@ body::-webkit-scrollbar-thumb:active,
 .animate-fadeIn {
     animation: fadeIn 0.2s ease-out;
 }
+
+/* Remove custom scrollbar theming to avoid cross-browser quirks */

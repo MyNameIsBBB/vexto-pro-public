@@ -85,7 +85,6 @@ export default function BlockRenderer({
 
     // Centralized separator renderer: one place to control dividers between blocks
     const renderSep = (i, t) => {
-        console.log("renderSep:", i, t, separated);
         if (!separated) return null;
         if (i >= groupedBlocks.length - 1) return null;
         if (t === "header") return null;
