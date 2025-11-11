@@ -796,42 +796,39 @@ export default function EditV2Page() {
                                 className="rounded-xl p-6 md:p-8"
                                 style={{ ...innerBgStyle, fontFamily }}
                             >
-                                <div className="flex items-start gap-4 mb-6">
+                                <div className="flex flex-col items-center text-center gap-5 mb-10">
                                     {profile.avatarUrl && (
                                         <img
                                             src={profile.avatarUrl}
                                             alt="avatar"
-                                            className="w-20 h-20 rounded-full object-cover ring-2 ring-white/30"
+                                            className="w-28 h-28 rounded-full object-cover ring-4 ring-white/40 shadow-xl"
                                         />
                                     )}
-                                    <div className="flex-1">
-                                        <h2
-                                            className="text-2xl font-bold mb-1"
+                                    <h2
+                                        className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2"
+                                        style={{
+                                            color:
+                                                profile.theme.textOverrides
+                                                    ?.name ||
+                                                profile.theme.textColor,
+                                        }}
+                                    >
+                                        {profile.displayName}
+                                    </h2>
+                                    {profile.bio && (
+                                        <p
+                                            className="text-base md:text-lg leading-relaxed max-w-2xl"
                                             style={{
                                                 color:
                                                     profile.theme.textOverrides
-                                                        ?.name ||
+                                                        ?.body ||
                                                     profile.theme.textColor,
+                                                opacity: 0.9,
                                             }}
                                         >
-                                            {profile.displayName}
-                                        </h2>
-                                        {profile.bio && (
-                                            <p
-                                                className="text-sm"
-                                                style={{
-                                                    color:
-                                                        profile.theme
-                                                            .textOverrides
-                                                            ?.body ||
-                                                        profile.theme.textColor,
-                                                    opacity: 0.9,
-                                                }}
-                                            >
-                                                {profile.bio}
-                                            </p>
-                                        )}
-                                    </div>
+                                            {profile.bio}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {profile.socials &&
@@ -844,71 +841,52 @@ export default function EditV2Page() {
                                         </div>
                                     )}
 
-                                <div className="space-y-4">
-                                    {profile.blocks.map((block, index) => {
-                                        // ไม่ต้องข้าม header เพราะตอนนี้ header เป็น property ของ block แล้ว
-                                        // ถ้า block มี header จะแสดงรวมกัน
-                                        const blocksToRender = block.header
-                                            ? [
-                                                  {
-                                                      type: "header",
-                                                      props: block.header,
-                                                  },
-                                                  block,
-                                              ]
-                                            : [block];
-
-                                        return (
-                                            <div key={block.id || index}>
-                                                <div
-                                                    className={`relative group cursor-move ${
-                                                        draggedIndex === index
-                                                            ? "opacity-50 scale-95"
-                                                            : ""
-                                                    }`}
-                                                    draggable
-                                                    onDragStart={() =>
-                                                        handleDragStart(index)
-                                                    }
-                                                    onDragOver={(e) =>
-                                                        handleDragOver(e, index)
-                                                    }
-                                                    onDragEnd={handleDragEnd}
-                                                >
-                                                    <BlockRenderer
-                                                        blocks={blocksToRender}
-                                                        theme={profile.theme}
-                                                        separated={true}
-                                                    />
-                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
-                                                        <button
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    index
-                                                                )
-                                                            }
-                                                            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                            title="แก้ไข"
-                                                        >
-                                                            <MdEdit className="w-5 h-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                deleteBlock(
-                                                                    index
-                                                                )
-                                                            }
-                                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                            title="ลบ"
-                                                        >
-                                                            <FiTrash2 className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
+                                {/* Unified renderer: pass all blocks at once so internal separators appear */}
+                                <div className="relative">
+                                    <BlockRenderer
+                                        blocks={profile.blocks}
+                                        theme={profile.theme}
+                                        separated={true}
+                                    />
+                                    {/* Floating edit controls per block (overlay) */}
+                                    <div className="mt-6 space-y-4">
+                                        {profile.blocks.map((block, index) => (
+                                            <div
+                                                key={block.id || index}
+                                                className="relative group"
+                                                draggable
+                                                onDragStart={() =>
+                                                    handleDragStart(index)
+                                                }
+                                                onDragOver={(e) =>
+                                                    handleDragOver(e, index)
+                                                }
+                                                onDragEnd={handleDragEnd}
+                                            >
+                                                <div className="absolute inset-0 rounded-xl pointer-events-none group-hover:ring-2 group-hover:ring-purple-500/40 transition-all" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
+                                                    <button
+                                                        onClick={() =>
+                                                            openEditModal(index)
+                                                        }
+                                                        className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                        title="แก้ไข"
+                                                    >
+                                                        <MdEdit className="w-5 h-5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            deleteBlock(index)
+                                                        }
+                                                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                        title="ลบ"
+                                                    >
+                                                        <FiTrash2 className="w-5 h-5" />
+                                                    </button>
                                                 </div>
-                                                {/* Separator handled by BlockRenderer when separated=true */}
                                             </div>
-                                        );
-                                    })}
+                                        ))}
+                                    </div>
                                 </div>
 
                                 {profile.blocks.length === 0 && (

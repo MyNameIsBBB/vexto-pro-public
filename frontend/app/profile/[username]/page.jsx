@@ -42,7 +42,7 @@ export default function UserProfile() {
                     }
                     return "http://localhost:5001/api";
                 })();
-                
+
                 const response = await fetch(`${apiUrl}/profiles/${username}`);
 
                 if (!response.ok) {
@@ -85,7 +85,10 @@ export default function UserProfile() {
         const isNotFound = error === "ไม่พบโปรไฟล์นี้";
         if (isNotFound) {
             return (
-                <div className="min-h-screen relative flex items-center justify-center px-6 py-14 overflow-hidden" style={{ background: "#0a0a0f" }}>
+                <div
+                    className="min-h-screen relative flex items-center justify-center px-6 py-14 overflow-hidden"
+                    style={{ background: "#0a0a0f" }}
+                >
                     {/* Outer themed background overlay */}
                     <div className="absolute inset-0 pointer-events-none">
                         <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-gradient-to-br from-fuchsia-600/20 to-cyan-400/20 blur-3xl" />
@@ -101,13 +104,20 @@ export default function UserProfile() {
                                 ไม่พบโปรไฟล์นี้
                             </h1>
                             <p className="mt-3 text-white/70">
-                                อาจมีการลบ เปลี่ยนชื่อ หรือยังไม่ได้เผยแพร่เป็นสาธารณะ
+                                อาจมีการลบ เปลี่ยนชื่อ
+                                หรือยังไม่ได้เผยแพร่เป็นสาธารณะ
                             </p>
                             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                                <Link href="/examples" className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-white hover:bg-white/10 transition">
+                                <Link
+                                    href="/examples"
+                                    className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-white hover:bg-white/10 transition"
+                                >
                                     ดูตัวอย่างโปรไฟล์
                                 </Link>
-                                <Link href="/" className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-fuchsia-600 to-cyan-400 px-5 py-3 text-white font-semibold hover:opacity-90 transition">
+                                <Link
+                                    href="/"
+                                    className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-fuchsia-600 to-cyan-400 px-5 py-3 text-white font-semibold hover:opacity-90 transition"
+                                >
                                     กลับสู่หน้าหลัก
                                 </Link>
                             </div>
@@ -123,9 +133,14 @@ export default function UserProfile() {
                 <div className="max-w-md w-full text-center">
                     <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8">
                         <MdErrorOutline className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                        <h1 className="text-2xl font-bold text-white mb-2">เกิดข้อผิดพลาด</h1>
+                        <h1 className="text-2xl font-bold text-white mb-2">
+                            เกิดข้อผิดพลาด
+                        </h1>
                         <p className="text-gray-400 mb-6">{error}</p>
-                        <Link href="/" className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl transition-colors">
+                        <Link
+                            href="/"
+                            className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl transition-colors"
+                        >
                             กลับสู่หน้าหลัก
                         </Link>
                     </div>
@@ -206,114 +221,114 @@ export default function UserProfile() {
                 aria-hidden
             />
             <div className="relative z-10 min-h-screen p-4 sm:p-6">
-                <div className="max-w-3xl mx-auto">
+                <div className="max-w-4xl mx-auto">
                     {/* Single main content frame with inner background */}
                     <div
                         className="relative rounded-3xl border border-white/10 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-md hover:border-white/20 transition-all duration-300"
                         style={{ ...buildInnerBg(theme), fontFamily }}
                     >
-                                {/* Share button top-right */}
-                                <button
-                                    onClick={handleShare}
-                                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
-                                    aria-label="แชร์โปรไฟล์นี้"
-                                    title="แชร์โปรไฟล์นี้"
-                                >
-                                    <MdShare className="w-4 h-4 sm:w-5 sm:h-5" />
-                                </button>
-                                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5 mb-6">
-                                    {/* Avatar with frame options */}
-                                    {profile.avatarUrl ? (
-                                        (() => {
-                                            const frame =
-                                                profile.avatarFrame || "none";
-                                            if (frame === "gradient") {
-                                                return (
-                                                    <div className="p-[2px] rounded-full bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] shadow-xl mx-auto sm:mx-0">
-                                                        <img
-                                                            src={
-                                                                profile.avatarUrl
-                                                            }
-                                                            alt="avatar"
-                                                            className="w-20 h-20 rounded-full object-cover"
-                                                        />
-                                                    </div>
-                                                );
-                                            }
-                                            const ringClass =
-                                                frame === "ring-thin"
-                                                    ? "ring-2 ring-white/30"
-                                                    : frame === "ring-thick"
-                                                    ? "ring-4 ring-white/40"
-                                                    : frame === "gold-glow"
-                                                    ? "ring-2 ring-yellow-400 shadow-[0_0_24px_rgba(250,204,21,0.45)]"
-                                                    : "border-2 border-white/20";
-                                            return (
+                        {/* Share button top-right */}
+                        <button
+                            onClick={handleShare}
+                            className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
+                            aria-label="แชร์โปรไฟล์นี้"
+                            title="แชร์โปรไฟล์นี้"
+                        >
+                            <MdShare className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                        <div className="flex flex-col items-center text-center gap-6 mb-10">
+                            {/* Avatar with frame options */}
+                            {profile.avatarUrl ? (
+                                (() => {
+                                    const frame = profile.avatarFrame || "none";
+                                    if (frame === "gradient") {
+                                        return (
+                                            <div className="p-[3px] rounded-full bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] shadow-2xl mx-auto">
                                                 <img
                                                     src={profile.avatarUrl}
                                                     alt="avatar"
-                                                    className={`w-20 h-20 rounded-full object-cover mx-auto sm:mx-0 ${ringClass}`}
+                                                    className="w-28 h-28 rounded-full object-cover"
                                                 />
-                                            );
-                                        })()
-                                    ) : (
-                                        <div className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20 mx-auto sm:mx-0" />
-                                    )}
-                                    <div className="flex-1 text-center sm:text-left">
-                                        <div
-                                            className="text-xl sm:text-2xl font-bold mb-1"
-                                            style={{ color: nameColor }}
-                                        >
-                                            {profile.displayName}
-                                        </div>
-                                        {profile.bio && (
-                                            <p
-                                                className="text-sm leading-relaxed"
-                                                style={{
-                                                    color: bodyColor,
-                                                    opacity: 0.9,
-                                                }}
-                                            >
-                                                {profile.bio}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                {Array.isArray(profile.socials) &&
-                                    profile.socials.length > 0 && (
-                                        <div className="mb-6">
-                                            <SocialIcons
-                                                items={profile.socials}
-                                                theme={theme}
-                                            />
-                                        </div>
-                                    )}
-                                {Array.isArray(profile.blocks) &&
-                                profile.blocks.length > 0 ? (
-                                    <div className="space-y-5">
-                                        <BlockRenderer
-                                            blocks={
-                                                isPro
-                                                    ? profile.blocks
-                                                    : profile.blocks.slice(0, 3)
-                                            }
-                                            theme={theme}
-                                            separated={true}
+                                            </div>
+                                        );
+                                    }
+                                    const ringClass =
+                                        frame === "ring-thin"
+                                            ? "ring-2 ring-white/30"
+                                            : frame === "ring-thick"
+                                            ? "ring-4 ring-white/40"
+                                            : frame === "gold-glow"
+                                            ? "ring-2 ring-yellow-400 shadow-[0_0_24px_rgba(250,204,21,0.45)]"
+                                            : "border-2 border-white/20";
+                                    return (
+                                        <img
+                                            src={profile.avatarUrl}
+                                            alt="avatar"
+                                            className={`w-28 h-28 rounded-full object-cover mx-auto ${ringClass} shadow-xl`}
                                         />
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <MdInbox className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                        <p className="text-white/60">
-                                            ยังไม่มีบล็อกในโปรไฟล์นี้
-                                        </p>
-                                    </div>
+                                    );
+                                })()
+                            ) : (
+                                <div className="w-28 h-28 rounded-full bg-white/10 border-2 border-white/20 mx-auto" />
+                            )}
+                            <div className="text-center mt-2">
+                                <div
+                                    className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3"
+                                    style={{ color: nameColor }}
+                                >
+                                    {profile.displayName}
+                                </div>
+                                {profile.bio && (
+                                    <p
+                                        className="text-base md:text-lg leading-relaxed max-w-2xl mx-auto"
+                                        style={{
+                                            color: bodyColor,
+                                            opacity: 0.9,
+                                        }}
+                                    >
+                                        {profile.bio}
+                                    </p>
                                 )}
+                            </div>
+                        </div>
+                        {Array.isArray(profile.socials) &&
+                            profile.socials.length > 0 && (
+                                <div className="mb-6">
+                                    <SocialIcons
+                                        items={profile.socials}
+                                        theme={theme}
+                                    />
+                                </div>
+                            )}
+                        {Array.isArray(profile.blocks) &&
+                        profile.blocks.length > 0 ? (
+                            <div className="space-y-5">
+                                <BlockRenderer
+                                    blocks={
+                                        isPro
+                                            ? profile.blocks
+                                            : profile.blocks.slice(0, 3)
+                                    }
+                                    theme={theme}
+                                    separated={true}
+                                />
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <MdInbox className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                <p className="text-white/60">
+                                    ยังไม่มีบล็อกในโปรไฟล์นี้
+                                </p>
+                            </div>
+                        )}
                         {/* Yellow branding bar for free users */}
                         {!isPro && (
                             <div className="mt-6 rounded-xl border border-yellow-300/30 bg-yellow-400/90 text-gray-900 text-center py-3 px-4 font-medium text-sm">
                                 อยากมีโปรไฟล์แบบนี้?{" "}
-                                <Link href="/pro" className="underline font-bold hover:text-gray-700">
+                                <Link
+                                    href="/pro"
+                                    className="underline font-bold hover:text-gray-700"
+                                >
                                     มาสร้างกับเรา
                                 </Link>
                             </div>
