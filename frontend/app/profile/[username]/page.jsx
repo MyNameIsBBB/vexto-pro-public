@@ -217,52 +217,262 @@ export default function UserProfile() {
 
     const handleExportProfileAsPdf = async () => {
         if (!profileRef.current) return;
-
+        // Variables declared outside try so finally can access
+        let yellowBar = null;
+        let prevYellowDisplay = null;
+        let prevBorderRadius = null;
         try {
             setIsExporting(true);
 
-            // 1. Temporarily add watermark (bottom-right) regardless of Pro status.
-            const watermark = document.createElement("div");
-            watermark.textContent = "Made by Vexto";
-            watermark.style.position = "absolute";
-            watermark.style.right = "18px";
-            watermark.style.bottom = "14px";
-            watermark.style.fontSize = "10px";
-            watermark.style.fontWeight = "600";
-            watermark.style.letterSpacing = "0.5px";
-            watermark.style.color = "rgba(255,255,255,0.55)";
-            watermark.style.pointerEvents = "none";
-            watermark.style.userSelect = "none";
-            watermark.setAttribute("data-html2canvas-ignore", "false"); // ensure it IS captured
+            // Remove border radius temporarily
+            prevBorderRadius = profileRef.current.style.borderRadius;
+            profileRef.current.style.borderRadius = "0";
 
-            // Append to profile container so sizing matches
-            profileRef.current.appendChild(watermark);
+            // Watermark will be drawn directly onto PDF per-page (bottom-right),
+            // to ensure it anchors to page bottom with a small margin.
 
-            // 2. Temporarily hide yellow free-user bar (if present)
-            const yellowBar =
-                profileRef.current.querySelector("[data-free-bar]");
-            let prevYellowDisplay;
+            // 2. Hide yellow bar if present
+            yellowBar = profileRef.current.querySelector("[data-free-bar]");
             if (yellowBar) {
                 prevYellowDisplay = yellowBar.style.display;
-                yellowBar.style.display = "none"; // hide before capture
+                yellowBar.style.display = "none";
             }
 
-            // Capture the element
-            const canvas = await html2canvas(profileRef.current, {
-                scale: 2, // High resolution
-                useCORS: true, // Allow loading external avatars
+            // 3. Ensure full height capture. html2canvas will include full scroll height of element.
+            // Force width to current offsetWidth to avoid layout shifts.
+            const target = profileRef.current;
+            const originalOverflow = target.style.overflow;
+            target.style.overflow = "visible";
+
+            const canvas = await html2canvas(target, {
+                scale: 2,
+                useCORS: true,
                 backgroundColor: null,
+                windowWidth: document.documentElement.clientWidth,
+                windowHeight: target.scrollHeight,
             });
 
-            // Convert to PDF (A4 size)
+            // Restore overflow before converting
+            target.style.overflow = originalOverflow;
+
+            // 4. Multi-page PDF logic if height exceeds one A4 page
             const imgData = canvas.toDataURL("image/png");
             const pdf = new jsPDF("p", "mm", "a4");
-
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = pdfWidth / imgWidth;
+            const renderedHeight = imgHeight * ratio; // height in mm when scaled to page width
 
-            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+            // Optional page background fill to match outer background color
+            const pageBgColor =
+                theme?.outerBackground || theme?.background || "#0a0a0f";
+
+            // Create a gradient watermark image ("made by Vexto") to place bottom-right per page
+            const createWatermarkImage = () => {
+                const scale = 2; // render high-res
+                const fontPx = 40; // a bit smaller than before
+                const padding = 8 * scale;
+                const makeByText = "made by ";
+                const vextoText = "Vexto";
+                // Try to use the same font as profile content
+                const ffMap = {
+                    prompt: "Prompt",
+                    kanit: "Kanit",
+                    sarabun: "Sarabun",
+                };
+                const wmFont = ffMap[theme?.fontFamily] || "Prompt";
+
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                ctx.font = `${fontPx}px "${wmFont}", Helvetica, Arial, sans-serif`;
+                const mbMetrics = ctx.measureText(makeByText);
+                // Bold for Vexto
+                ctx.font = `bold ${fontPx}px "${wmFont}", Helvetica, Arial, sans-serif`;
+                const vMetrics = ctx.measureText(vextoText);
+
+                const textWidth = Math.ceil(mbMetrics.width + vMetrics.width);
+                const textHeight = Math.ceil(fontPx * 1.35);
+                canvas.width = textWidth + padding * 2;
+                canvas.height = textHeight + padding * 2;
+
+                // Background transparent
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw "made by" (lower opacity)
+                ctx.font = `${fontPx}px "${wmFont}", Helvetica, Arial, sans-serif`;
+                ctx.fillStyle = nameColor || "#f3f4f6";
+                let x = padding;
+                const baselineY = padding + fontPx;
+                ctx.save();
+                ctx.globalAlpha = 0.6;
+                ctx.fillText(makeByText, x, baselineY);
+                ctx.restore();
+
+                // Draw "Vexto" with brand gradient (#7c3aed -> #22d3ee)
+                ctx.font = `bold ${fontPx}px "${wmFont}", Helvetica, Arial, sans-serif`;
+                const gradStartX = x + mbMetrics.width;
+                const gradEndX = gradStartX + vMetrics.width;
+                const gradient = ctx.createLinearGradient(
+                    gradStartX,
+                    0,
+                    gradEndX,
+                    0
+                );
+                gradient.addColorStop(0, "#7c3aed");
+                gradient.addColorStop(1, "#22d3ee");
+                ctx.fillStyle = gradient;
+                ctx.fillText(vextoText, gradStartX, baselineY);
+
+                // No underline as requested
+
+                // Decide final size on PDF (mm). Fixed width for consistency.
+                const widthMm = 16; // slightly smaller as requested
+                const heightMm = (widthMm * canvas.height) / canvas.width;
+                return {
+                    dataUrl: canvas.toDataURL("image/png"),
+                    widthMm,
+                    heightMm,
+                };
+            };
+
+            const watermarkImg = createWatermarkImage();
+
+            // Draw watermark bottom-right of current PDF page
+            const drawWatermark = () => {
+                const margin = 2; // mm, lower placement near bottom
+                const x = pdfWidth - margin - watermarkImg.widthMm;
+                const y = pdfHeight - margin - watermarkImg.heightMm;
+                pdf.addImage(
+                    watermarkImg.dataUrl,
+                    "PNG",
+                    x,
+                    y,
+                    watermarkImg.widthMm,
+                    watermarkImg.heightMm
+                );
+            };
+
+            if (renderedHeight <= pdfHeight) {
+                pdf.setFillColor(pageBgColor);
+                pdf.rect(0, 0, pdfWidth, pdfHeight, "F");
+                pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, renderedHeight);
+                drawWatermark();
+            } else {
+                // Smart page breaks at block boundaries
+                const pageHeightPxFull = pdfHeight / ratio; // px per page
+                const h2cScale = 2; // must match html2canvas scale
+                const blocksContainer =
+                    target.querySelector("[data-pdf-blocks]");
+                const pageRanges = [];
+                if (blocksContainer) {
+                    const children = Array.from(
+                        blocksContainer.children
+                    ).filter((el) => el.nodeType === 1);
+                    const blocks = children.map((el) => {
+                        const top = el.offsetTop * h2cScale;
+                        const bottom =
+                            (el.offsetTop + el.offsetHeight) * h2cScale;
+                        return { top, bottom, height: bottom - top };
+                    });
+
+                    let pageStart = 0;
+                    let i = 0;
+                    let lastFitIndex = -1;
+                    let lastFitBottom = 0;
+                    while (i < blocks.length) {
+                        const b = blocks[i];
+                        if (b.bottom - pageStart <= pageHeightPxFull) {
+                            lastFitIndex = i;
+                            lastFitBottom = b.bottom;
+                            i += 1;
+                            continue;
+                        }
+
+                        if (lastFitIndex >= 0) {
+                            // Close page at last fully-fitting block
+                            pageRanges.push({
+                                start: pageStart,
+                                end: lastFitBottom,
+                            });
+                            pageStart = lastFitBottom;
+                            lastFitIndex = -1;
+                            continue; // re-evaluate current block on next page
+                        }
+
+                        // Block bigger than a page: split inside this block
+                        let splitStart = Math.max(b.top, pageStart);
+                        while (splitStart < b.bottom) {
+                            const splitEnd = Math.min(
+                                splitStart + pageHeightPxFull,
+                                b.bottom
+                            );
+                            pageRanges.push({
+                                start: splitStart,
+                                end: splitEnd,
+                            });
+                            splitStart = splitEnd;
+                        }
+                        pageStart = b.bottom;
+                        i += 1;
+                    }
+                    if (pageStart < imgHeight) {
+                        pageRanges.push({ start: pageStart, end: imgHeight });
+                    }
+                } else {
+                    // Fallback to simple slicing
+                    let position = 0;
+                    while (position < imgHeight) {
+                        const remaining = imgHeight - position;
+                        const sliceHeightPx = Math.min(
+                            pageHeightPxFull,
+                            remaining
+                        );
+                        pageRanges.push({
+                            start: position,
+                            end: position + sliceHeightPx,
+                        });
+                        position += sliceHeightPx;
+                    }
+                }
+
+                // Render ranges
+                const pageCanvas = document.createElement("canvas");
+                const pageCtx = pageCanvas.getContext("2d");
+                pageCanvas.width = imgWidth;
+                for (let idx = 0; idx < pageRanges.length; idx++) {
+                    const { start, end } = pageRanges[idx];
+                    const sliceHeightPx = end - start;
+                    pageCanvas.height = sliceHeightPx;
+                    pageCtx.clearRect(0, 0, imgWidth, sliceHeightPx);
+                    pageCtx.drawImage(
+                        canvas,
+                        0,
+                        start,
+                        imgWidth,
+                        sliceHeightPx,
+                        0,
+                        0,
+                        imgWidth,
+                        sliceHeightPx
+                    );
+                    const pageData = pageCanvas.toDataURL("image/png");
+                    const sliceRenderedHeightMm = sliceHeightPx * ratio;
+                    pdf.setFillColor(pageBgColor);
+                    pdf.rect(0, 0, pdfWidth, pdfHeight, "F");
+                    pdf.addImage(
+                        pageData,
+                        "PNG",
+                        0,
+                        0,
+                        pdfWidth,
+                        sliceRenderedHeightMm
+                    );
+                    drawWatermark();
+                    if (idx < pageRanges.length - 1) pdf.addPage();
+                }
+            }
 
             const safeName = (profile?.displayName || "profile").replace(
                 /[^a-z0-9]/gi,
@@ -273,16 +483,12 @@ export default function UserProfile() {
             console.error("PDF Export Error:", err);
             alert("Failed to export PDF");
         } finally {
-            // Clean up watermark and restore yellow bar
-            const wm = profileRef.current.querySelector("div#__vextoWatermark");
-            if (wm && wm.parentNode) wm.parentNode.removeChild(wm);
-            // (We appended manual watermark; we kept reference variable instead for removal)
-            if (profileRef.current.contains(watermark)) {
-                profileRef.current.removeChild(watermark);
-            }
-            const yellowBar =
-                profileRef.current.querySelector("[data-free-bar]");
+            // Restore yellow bar
             if (yellowBar) yellowBar.style.display = prevYellowDisplay || "";
+            // Restore border radius
+            if (prevBorderRadius !== null) {
+                profileRef.current.style.borderRadius = prevBorderRadius;
+            }
             setIsExporting(false);
         }
     };
@@ -318,11 +524,11 @@ export default function UserProfile() {
                             <button
                                 onClick={handleExportProfileAsPdf}
                                 disabled={isExporting}
-                                className="p-2 rounded-full bg-gradient-to-br from-fuchsia-600/70 to-cyan-400/70 hover:from-fuchsia-600 hover:to-cyan-400 text-white transition shadow border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition backdrop-blur-sm border border-white/15 shadow disabled:opacity-40 disabled:cursor-not-allowed"
                                 title="บันทึกเป็น PDF"
                             >
                                 {isExporting ? (
-                                    <div className="w-4 h-4 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-transparent rounded-full animate-spin" />
                                 ) : (
                                     <MdOutlineIosShare className="w-4 h-4 sm:w-5 sm:h-5 transform rotate-180" />
                                 )}
@@ -397,7 +603,7 @@ export default function UserProfile() {
                             )}
                         {Array.isArray(profile.blocks) &&
                         profile.blocks.length > 0 ? (
-                            <div className="space-y-5">
+                            <div className="space-y-5" data-pdf-blocks>
                                 <BlockRenderer
                                     blocks={
                                         isPro
