@@ -841,52 +841,87 @@ export default function EditV2Page() {
                                         </div>
                                     )}
 
-                                {/* Unified renderer: pass all blocks at once so internal separators appear */}
-                                <div className="relative">
-                                    <BlockRenderer
-                                        blocks={profile.blocks}
-                                        theme={profile.theme}
-                                        separated={true}
-                                    />
-                                    {/* Floating edit controls per block (overlay) */}
-                                    <div className="mt-6 space-y-4">
-                                        {profile.blocks.map((block, index) => (
-                                            <div
-                                                key={block.id || index}
-                                                className="relative group"
-                                                draggable
-                                                onDragStart={() =>
-                                                    handleDragStart(index)
-                                                }
-                                                onDragOver={(e) =>
-                                                    handleDragOver(e, index)
-                                                }
-                                                onDragEnd={handleDragEnd}
-                                            >
-                                                <div className="absolute inset-0 rounded-xl pointer-events-none group-hover:ring-2 group-hover:ring-purple-500/40 transition-all" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
-                                                    <button
-                                                        onClick={() =>
-                                                            openEditModal(index)
-                                                        }
-                                                        className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                        title="แก้ไข"
-                                                    >
-                                                        <MdEdit className="w-5 h-5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            deleteBlock(index)
-                                                        }
-                                                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
-                                                        title="ลบ"
-                                                    >
-                                                        <FiTrash2 className="w-5 h-5" />
-                                                    </button>
+                                {/* Render per-block so hover overlay binds to each group's area */}
+                                <div className="space-y-4">
+                                    {profile.blocks.map((block, index) => {
+                                        const blocksToRender = block.header
+                                            ? [
+                                                  {
+                                                      type: "header",
+                                                      props: block.header,
+                                                  },
+                                                  block,
+                                              ]
+                                            : [block];
+
+                                        const dividerColor = `${
+                                            profile.theme?.textColor ||
+                                            "#94a3b8"
+                                        }33`;
+
+                                        return (
+                                            <div key={block.id || index}>
+                                                <div
+                                                    className={`relative group ${
+                                                        draggedIndex === index
+                                                            ? "opacity-50 scale-95"
+                                                            : ""
+                                                    }`}
+                                                    draggable
+                                                    onDragStart={() =>
+                                                        handleDragStart(index)
+                                                    }
+                                                    onDragOver={(e) =>
+                                                        handleDragOver(e, index)
+                                                    }
+                                                    onDragEnd={handleDragEnd}
+                                                >
+                                                    <BlockRenderer
+                                                        blocks={blocksToRender}
+                                                        theme={profile.theme}
+                                                        separated={false}
+                                                    />
+                                                    {/* Hover overlay tied to this block wrapper */}
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2 pointer-events-none">
+                                                        <button
+                                                            onClick={() =>
+                                                                openEditModal(
+                                                                    index
+                                                                )
+                                                            }
+                                                            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                            title="แก้ไข"
+                                                        >
+                                                            <MdEdit className="w-5 h-5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                deleteBlock(
+                                                                    index
+                                                                )
+                                                            }
+                                                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors pointer-events-auto"
+                                                            title="ลบ"
+                                                        >
+                                                            <FiTrash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
+                                                {/* Separator between top-level blocks */}
+                                                {index <
+                                                    profile.blocks.length -
+                                                        1 && (
+                                                    <div
+                                                        className="my-6"
+                                                        style={{
+                                                            borderTop: `1px solid ${dividerColor}`,
+                                                            opacity: 0.7,
+                                                        }}
+                                                    />
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })}
                                 </div>
 
                                 {profile.blocks.length === 0 && (
