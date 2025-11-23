@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import Link from "next/link";
 import BlockRenderer from "@/components/BlockRenderer";
 import SocialIcons from "@/components/SocialIcons";
-import { MdErrorOutline, MdInbox, MdShare } from "react-icons/md";
+import {
+    MdErrorOutline,
+    MdInbox,
+    MdOutlineIosShare,
+    MdShare,
+} from "react-icons/md";
 
 export default function UserProfile() {
     const params = useParams();
@@ -14,6 +21,9 @@ export default function UserProfile() {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const profileRef = useRef(null);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Removed JS-based scrollbar/background tweaks.
     // We now rely on global CSS (globals.css) to prevent horizontal overflow
@@ -205,6 +215,78 @@ export default function UserProfile() {
         }
     };
 
+    const handleExportProfileAsPdf = async () => {
+        if (!profileRef.current) return;
+
+        try {
+            setIsExporting(true);
+
+            // 1. Temporarily add watermark (bottom-right) regardless of Pro status.
+            const watermark = document.createElement("div");
+            watermark.textContent = "Made by Vexto";
+            watermark.style.position = "absolute";
+            watermark.style.right = "18px";
+            watermark.style.bottom = "14px";
+            watermark.style.fontSize = "10px";
+            watermark.style.fontWeight = "600";
+            watermark.style.letterSpacing = "0.5px";
+            watermark.style.color = "rgba(255,255,255,0.55)";
+            watermark.style.pointerEvents = "none";
+            watermark.style.userSelect = "none";
+            watermark.setAttribute("data-html2canvas-ignore", "false"); // ensure it IS captured
+
+            // Append to profile container so sizing matches
+            profileRef.current.appendChild(watermark);
+
+            // 2. Temporarily hide yellow free-user bar (if present)
+            const yellowBar =
+                profileRef.current.querySelector("[data-free-bar]");
+            let prevYellowDisplay;
+            if (yellowBar) {
+                prevYellowDisplay = yellowBar.style.display;
+                yellowBar.style.display = "none"; // hide before capture
+            }
+
+            // Capture the element
+            const canvas = await html2canvas(profileRef.current, {
+                scale: 2, // High resolution
+                useCORS: true, // Allow loading external avatars
+                backgroundColor: null,
+            });
+
+            // Convert to PDF (A4 size)
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+            const safeName = (profile?.displayName || "profile").replace(
+                /[^a-z0-9]/gi,
+                "_"
+            );
+            pdf.save(`${safeName}.pdf`);
+        } catch (err) {
+            console.error("PDF Export Error:", err);
+            alert("Failed to export PDF");
+        } finally {
+            // Clean up watermark and restore yellow bar
+            const wm = profileRef.current.querySelector("div#__vextoWatermark");
+            if (wm && wm.parentNode) wm.parentNode.removeChild(wm);
+            // (We appended manual watermark; we kept reference variable instead for removal)
+            if (profileRef.current.contains(watermark)) {
+                profileRef.current.removeChild(watermark);
+            }
+            const yellowBar =
+                profileRef.current.querySelector("[data-free-bar]");
+            if (yellowBar) yellowBar.style.display = prevYellowDisplay || "";
+            setIsExporting(false);
+        }
+    };
+
     return (
         <>
             {/* Full-viewport themed background behind content (covers layout bg) */}
@@ -217,18 +299,36 @@ export default function UserProfile() {
                 <div className="max-w-4xl mx-auto">
                     {/* Single main content frame with inner background */}
                     <div
+                        ref={profileRef}
                         className="relative rounded-3xl border border-white/10 p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-md hover:border-white/20 transition-all duration-300"
                         style={{ ...buildInnerBg(theme), fontFamily }}
                     >
-                        {/* Share button top-right */}
-                        <button
-                            onClick={handleShare}
-                            className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
-                            aria-label="แชร์โปรไฟล์นี้"
-                            title="แชร์โปรไฟล์นี้"
+                        {/* Actions top-right (excluded from PDF) */}
+                        <div
+                            className="absolute top-2 right-2 sm:top-3 sm:right-3 flex gap-2"
+                            data-html2canvas-ignore="true"
                         >
-                            <MdShare className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
+                            <button
+                                onClick={handleShare}
+                                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition backdrop-blur-sm border border-white/15 shadow"
+                                title="แชร์โปรไฟล์"
+                            >
+                                <MdShare className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                            <button
+                                onClick={handleExportProfileAsPdf}
+                                disabled={isExporting}
+                                className="p-2 rounded-full bg-gradient-to-br from-fuchsia-600/70 to-cyan-400/70 hover:from-fuchsia-600 hover:to-cyan-400 text-white transition shadow border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="บันทึกเป็น PDF"
+                            >
+                                {isExporting ? (
+                                    <div className="w-4 h-4 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <MdOutlineIosShare className="w-4 h-4 sm:w-5 sm:h-5 transform rotate-180" />
+                                )}
+                            </button>
+                        </div>
+
                         <div className="flex flex-col items-center text-center gap-6 mb-10">
                             {/* Avatar with frame options */}
                             {profile.avatarUrl ? (
@@ -239,6 +339,7 @@ export default function UserProfile() {
                                             <div className="p-[3px] rounded-full bg-gradient-to-r from-[#7c3aed] to-[#22d3ee] shadow-2xl mx-auto">
                                                 <img
                                                     src={profile.avatarUrl}
+                                                    crossOrigin="anonymous"
                                                     alt="avatar"
                                                     className="w-28 h-28 rounded-full object-cover"
                                                 />
@@ -256,6 +357,7 @@ export default function UserProfile() {
                                     return (
                                         <img
                                             src={profile.avatarUrl}
+                                            crossOrigin="anonymous"
                                             alt="avatar"
                                             className={`w-28 h-28 rounded-full object-cover mx-auto ${ringClass} shadow-xl`}
                                         />
@@ -314,9 +416,12 @@ export default function UserProfile() {
                                 </p>
                             </div>
                         )}
-                        {/* Yellow branding bar for free users */}
+                        {/* Yellow branding bar for free users (ignored in PDF export) */}
                         {!isPro && (
-                            <div className="mt-6 rounded-xl border border-yellow-300/30 bg-yellow-400/90 text-gray-900 text-center py-3 px-4 font-medium text-sm">
+                            <div
+                                data-free-bar
+                                className="mt-6 rounded-xl border border-yellow-300/30 bg-yellow-400/90 text-gray-900 text-center py-3 px-4 font-medium text-sm"
+                            >
                                 อยากมีโปรไฟล์แบบนี้?{" "}
                                 <Link
                                     href="/pro"
