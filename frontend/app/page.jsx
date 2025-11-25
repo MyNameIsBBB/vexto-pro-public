@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001/api";
 
 export default function HomePage() {
+    // Auth state (only used to toggle CTA destination)
+    const { isAuthenticated } = useAuth();
     const [stats, setStats] = useState({
         users: 0,
         profiles: 0,
@@ -85,7 +88,7 @@ export default function HomePage() {
                     </p>
                     <div className="mt-8 flex items-center justify-center gap-4">
                         <Link
-                            href="/register"
+                            href={isAuthenticated ? "/edit" : "/register"}
                             className="px-6 py-3.5 rounded-xl text-white font-medium shadow-lg transition hover:opacity-95 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7c3aed]/50"
                             style={{
                                 background:
@@ -330,7 +333,7 @@ export default function HomePage() {
                     </p>
                     <div className="mt-6 flex items-center justify-center gap-4">
                         <Link
-                            href="/register"
+                            href={isAuthenticated ? "/edit" : "/register"}
                             className="px-6 py-3.5 rounded-xl text-white font-medium shadow-lg transition hover:opacity-95 hover:scale-105"
                             style={{ background: "#7c3aed" }}
                         >
