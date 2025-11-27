@@ -15,6 +15,7 @@
         "@stripe/stripe-js": "^8.3.0",
         "html2canvas": "^1.4.1",
         "next": "^14.2.10",
+        "qrcode": "^0.9.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-icons": "^4.12.0"
