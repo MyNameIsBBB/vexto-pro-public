@@ -2,6 +2,8 @@
 node_modules/
 .pnp
 .pnp.js
+package-lock.json
+yarn.lock
 
 # Testing
 coverage/
@@ -24,16 +26,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local env files - never commit sensitive data
+# Local env files - CRITICAL: Never commit these to public repo
 .env
 .env*.local
 backend/.env
 backend/.env.local
 frontend/.env
 frontend/.env.local
-
-# Keep example files but ignore actual env files
-!*.env.example
+*.env
+!.env.example
 
 # Vercel
 .vercel
@@ -47,3 +48,33 @@ frontend/.env.local
 
 # OS
 Thumbs.db
+
+# Database & Sensitive Data
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# API Keys & Secrets - NEVER COMMIT
+*_SECRET*
+*_KEY*
+*_TOKEN*
+*.pem
+*.key
+*.cert
+
+# Deployment configs (may contain sensitive info)
+docker-compose.override.yml
+.env.production
+
+# User uploads & generated content
+uploads/
+temp/
+tmp/
+
+# MongoDB
+mongo-data/
+
+# Sensitive documentation
+DEPLOY_CREDENTIALS.md
+API_KEYS.md
