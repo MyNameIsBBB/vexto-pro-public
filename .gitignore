@@ -28,13 +28,11 @@ yarn-error.log*
 
 # Local env files - CRITICAL: Never commit these to public repo
 .env
-.env*.local
-backend/.env
-backend/.env.local
-frontend/.env
-frontend/.env.local
+.env*
 *.env
-!.env.example
+*.env.*
+backend/.env*
+frontend/.env*
 
 # Vercel
 .vercel
@@ -42,6 +40,8 @@ frontend/.env.local
 
 
 .dockerignore
+frontend/.dockerignore
+backend/.dockerignore
 
 .nginx-api.vexto.pro.conf
 *.conf
