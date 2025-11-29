@@ -1,248 +1,307 @@
-# 🚀 Vexto - Profile Builder Platform
+# 🚀 Vexto - Professional Digital Presence Platform
 
-A modern, customizable profile link platform with premium templates, payment integration, and full theme customization.
+> **Enterprise-grade bio-link platform** for businesses, creators, and service providers. Create professional profiles with integrated payments, booking systems, and custom branding.
 
-## ✅ Features
-
--   🔐 **Authentication** - JWT-based login/register with Discord OAuth
--   👤 **Profile Builder** - Drag & drop blocks with real-time preview
--   🎨 **Customization** - Themes, fonts, avatar frames, colors
--   👑 **Premium System** - Free & Pro tiers with exclusive templates
--   💳 **Payment Integration** - PromptPay QR code payments via TMWEASY
--   📱 **Social Icons** - 20+ platforms (TikTok, Instagram, X, etc.)
--   🎯 **Premium Templates** - Testimonials, pricing, team, stats, timeline
--   🛡️ **Admin Panel** - Creator submission management
--   📊 **Analytics Ready** - Built for tracking and insights
--   🐳 **Docker Support** - Containerized for easy deployment
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](package.json)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 
 ---
 
-## 🚀 Deploy to Vercel (Production)
+## ✨ Key Features
 
-### Quick Deploy
-
-```bash
-# 1. Install Vercel CLI
-npm i -g vercel
-
-# 2. Run deployment script
-./deploy.sh
-
-# Or manually:
-vercel login
-vercel
-# Then set environment variables in Vercel Dashboard
-vercel --prod
-```
-
-### 📋 What You Need
-
-1. **MongoDB Atlas** - Free tier available
-2. **TMWEASY Account** - For payment processing
-3. **Environment Variables** - See `.env.production.example`
-
-**📖 Full deployment guide:** [DEPLOYMENT.md](./DEPLOYMENT.md)  
-**✅ Deployment checklist:** [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
+- 🔐 **Authentication** - JWT + OAuth (Discord, Google)
+- 👤 **Profile Builder** - Drag & drop content blocks with live preview
+- 🎨 **Full Customization** - Themes, fonts, colors, backgrounds
+- 💳 **Payment Integration** - PromptPay QR, Stripe, real-time transactions
+- 📅 **Service Booking** - Integrated appointment scheduling system
+- 👑 **Premium Tiers** - Free and Pro plans with exclusive features
+- 📱 **20+ Social Platforms** - Instagram, TikTok, X, YouTube, Discord, etc.
+- 🎯 **Pro Blocks** - Testimonials, pricing tables, team, stats, galleries
+- 📊 **Analytics Ready** - Track views, clicks, and conversions
+- 🐳 **Docker Support** - Fully containerized for easy deployment
 
 ---
 
-## 🐳 Quick Start with Docker (Development)
-
-```bash
-# Start all services
-docker-compose up --build
-
-# Or run in background
-docker-compose up -d --build
-```
-
-**Access:**
-
--   Frontend: http://localhost:3000
--   Backend API: http://localhost:5001
--   MongoDB: localhost:27017
-
-**Stop:**
-
-```bash
-docker-compose down
-```
-
----
-
-## 💻 Local Development
+## 🚀 Quick Start
 
 ### Prerequisites
 
--   Node.js 18+
--   MongoDB
--   npm or yarn
+- Node.js 18+ and npm/yarn
+- MongoDB (local or Atlas)
+- *(Optional)* Docker & Docker Compose
 
-### Backend
+### 1. Clone & Install
 
 ```bash
+git clone https://github.com/MyNameIsBBB/vexto-pro-public.git
+cd vexto-pro-public
+
+# Install dependencies
+npm install
+cd frontend && npm install && cd ..
+cd backend && npm install && cd ..
+```
+
+### 2. Environment Setup
+
+Create `.env` files:
+
+**Backend** (`backend/.env`):
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/vexto
+
+# JWT Secret (generate with: openssl rand -base64 32)
+JWT_SECRET=your-secret-key-here
+
+# OAuth (optional - get from provider dashboards)
+DISCORD_CLIENT_ID=your-discord-client-id
+DISCORD_CLIENT_SECRET=your-discord-secret
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-secret
+
+# Payment (optional - TMWEASY/Stripe)
+TMWEASY_MERCHANT_ID=your-merchant-id
+TMWEASY_SECRET_KEY=your-secret
+STRIPE_SECRET_KEY=sk_test_xxx
+
+# URLs
+FRONTEND_URL=http://localhost:3000
+BACKEND_URL=http://localhost:5001
+```
+
+**Frontend** (`frontend/.env.local`):
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5001/api
+```
+
+### 3. Run Development
+
+**Option A: Docker (Recommended)**
+```bash
+docker-compose up
+```
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5001
+- MongoDB: localhost:27017
+
+**Option B: Manual**
+```bash
+# Terminal 1 - Backend
 cd backend
-cp .env.example .env
-# Edit .env with your configuration
-npm install
+npm run dev
+
+# Terminal 2 - Frontend
+cd frontend
 npm run dev
 ```
 
-### Frontend
+---
+
+## 📦 Project Structure
+
+```
+vexto-pro-public/
+├── frontend/           # Next.js 14 app (React 18)
+│   ├── app/           # App router pages
+│   ├── components/    # Reusable components
+│   ├── contexts/      # Auth & Toast contexts
+│   └── lib/           # Utilities & API helpers
+├── backend/           # Node.js + Express API
+│   ├── src/
+│   │   ├── models/    # MongoDB schemas
+│   │   ├── routes/    # API endpoints
+│   │   └── middleware/# Auth, validation, rate limiting
+│   └── api/           # Vercel serverless entry
+├── docker-compose.yml # Container orchestration
+└── BUSINESS_PITCH.md  # Professional pitch deck
+```
+
+---
+
+## 🌐 Production Deployment
+
+### Deploy to Vercel (Recommended)
+
+1. **Prepare MongoDB Atlas**
+   - Create free cluster at [mongodb.com/atlas](https://mongodb.com/atlas)
+   - Get connection string
+   - Whitelist Vercel IPs (0.0.0.0/0 for serverless)
+
+2. **Deploy**
+   ```bash
+   npm i -g vercel
+   vercel login
+   vercel --prod
+   ```
+
+3. **Configure Environment**
+   - Go to Vercel Dashboard → Settings → Environment Variables
+   - Add all variables from `.env` files
+   - Redeploy: `vercel --prod`
+
+4. **Set Custom Domain** *(Optional)*
+   - Vercel Dashboard → Domains → Add Domain
+   - Update DNS records as instructed
+
+### Alternative: Docker + VPS
 
 ```bash
-cd frontend
-cp .env.local.example .env.local
-# Edit .env.local with backend URL
-npm install
-npm run dev
+# Build and run in production mode
+docker-compose -f docker-compose.yml up -d
+
+# Or deploy to any VPS with Docker installed
+scp -r . user@your-server:/app
+ssh user@your-server
+cd /app && docker-compose up -d
 ```
 
 ---
 
-## 🏗️ Project Structure
+## 🔧 Configuration Guide
 
-```
-vexto/
-├── frontend/           # Next.js 14 app
-│   ├── app/           # App router pages
-│   ├── components/    # React components
-│   ├── contexts/      # Auth context
-│   └── lib/           # API utilities
-├── backend/           # Express API
-│   ├── src/
-│   │   ├── routes/    # API endpoints
-│   │   ├── models/    # MongoDB models
-│   │   └── middleware/# Auth & admin middleware
-│   └── api/           # Vercel serverless entry
-├── vercel.json        # Vercel configuration
-├── docker-compose.yml # Docker setup
-└── deploy.sh          # Deployment helper
-```
+### Payment Integration
 
----
+**PromptPay QR (Thailand)**
+- Register at [TMWEASY](https://www.tmweasy.com/)
+- Get Merchant ID and Secret Key
+- Add to `backend/.env`: `TMWEASY_MERCHANT_ID` and `TMWEASY_SECRET_KEY`
 
-## 📱 Supported Social Platforms
+**Stripe** *(International)*
+- Get keys from [Stripe Dashboard](https://dashboard.stripe.com/apikeys)
+- Add to `backend/.env`: `STRIPE_SECRET_KEY`
 
-Instagram • TikTok • X (Twitter) • Facebook • YouTube • Line • Discord • Twitch • GitHub • LinkedIn • Threads • Snapchat • Pinterest • Medium • Behance • Dribbble • Spotify • Apple Music • SoundCloud • Custom Links
+### OAuth Setup
 
----
+**Discord**
+1. Create app at [Discord Developer Portal](https://discord.com/developers/applications)
+2. OAuth2 → Add redirect: `{FRONTEND_URL}/auth/discord/callback`
+3. Copy Client ID and Secret to `.env`
 
-## 🎨 Premium Features
+**Google**
+1. Create project at [Google Cloud Console](https://console.cloud.google.com/)
+2. OAuth consent screen → Credentials → Create OAuth Client ID
+3. Authorized redirect URIs: `{FRONTEND_URL}/auth/google/callback`
+4. Copy credentials to `.env`
 
--   **Premium Templates:** Testimonials, Pricing Tables, Team Profiles, Statistics, Timeline
--   **Avatar Frames:** Glow effects, gradient borders
--   **Custom Themes:** Pre-built color schemes with full customization
--   **Font Options:** Multiple typography choices
--   **Border Radius:** Customize component roundness
+### Admin Access
 
----
-
-## 📚 Documentation
-
--   📖 [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete Vercel deployment guide
--   ✅ [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) - Pre-deployment checklist
--   🚀 [DEPLOY_QUICK.md](./DEPLOY_QUICK.md) - Quick deployment steps
--   🐳 [DOCKER_SETUP.md](./DOCKER_SETUP.md) - Docker guide
--   🔌 [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md) - Backend integration
--   ⚙️ [SETUP.md](./SETUP.md) - Local setup instructions
-
----
-
-## 🔒 Environment Variables
-
-### Frontend
-
-```env
-NEXT_PUBLIC_API_BASE_URL=https://your-project.vercel.app/api
+First registered user is auto-admin. Or manually set in MongoDB:
+```javascript
+db.users.updateOne(
+  { email: "admin@example.com" },
+  { $set: { role: "admin" } }
+)
 ```
 
-### Backend
-
-```env
-MONGODB_URI=mongodb+srv://...
-JWT_SECRET=your-secret-key
-TMW_USER=your-tmweasy-username
-TMW_PASSWORD=your-password
-TMW_CON_ID=your-con-id
-TMW_PROMPTPAY_ID=your-promptpay-id
-TMW_TYPE=01
-ADMIN_EMAILS=admin@example.com
-```
-
-See `.env.production.example` for complete list.
+Access admin panel: `{FRONTEND_URL}/admin`
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Development
 
-**Frontend:**
+### Available Scripts
 
--   Next.js 14 (App Router)
--   React 18
--   TailwindCSS
--   React Icons
--   DnD Kit (drag & drop)
+**Frontend**
+```bash
+npm run dev          # Development server (localhost:3000)
+npm run build        # Production build
+npm run start        # Production server
+npm run lint         # ESLint check
+```
 
-**Backend:**
+**Backend**
+```bash
+npm run dev          # Development (nodemon)
+npm start            # Production
+npm run build        # Build for Vercel serverless
+```
 
--   Node.js / Express
--   MongoDB / Mongoose
--   JWT Authentication
--   TMWEASY Payment API
--   Helmet.js (security)
+### API Endpoints
 
-**Deployment:**
+**Auth**
+- `POST /api/auth/register` - Create account
+- `POST /api/auth/login` - Login
+- `GET /api/auth/discord` - OAuth Discord
+- `GET /api/auth/google` - OAuth Google
 
--   Vercel (serverless)
--   MongoDB Atlas
--   Docker (optional)
+**Profiles**
+- `GET /api/profiles/:username` - Get public profile
+- `GET /api/profiles/me` - Get own profile (auth)
+- `PUT /api/profiles/me` - Update profile (auth)
+
+**Payments**
+- `POST /api/payment/create-qr` - Generate PromptPay QR
+- `POST /api/payment/webhook` - Payment callback
+
+**Admin** *(Auth + Admin role)*
+- `GET /api/admin/creators` - List creator submissions
+- `POST /api/admin/creators/:id/approve` - Approve submission
+- `POST /api/admin/creators/:id/reject` - Reject submission
 
 ---
 
-## 📊 API Endpoints
+## 🎨 Customization
 
+### Adding New Content Blocks
+
+1. Create editor component in `frontend/components/block-editors/`
+2. Add renderer in `frontend/components/BlockRenderer.jsx`
+3. Register in block type enum
+
+### Custom Themes
+
+Themes are stored in profile settings:
+```javascript
+{
+  theme: {
+    primary: "#7c3aed",
+    accent: "#22d3ee",
+    background: "#0a0a0f",
+    textColor: "#f3f4f6",
+    fontFamily: "prompt",
+    borderRadius: "modern",
+    backgroundImage: "url(...)",
+    // ...
+  }
+}
 ```
-POST   /api/auth/register       - User registration
-POST   /api/auth/login          - User login
-GET    /api/auth/check-username - Check availability
-GET    /api/profile/:username   - Get profile
-PUT    /api/profile             - Update profile
-POST   /api/payment/qrcode      - Generate payment QR
-POST   /api/feedback            - Submit feedback
-GET    /api/shop/creator-items  - Get creator items
-POST   /api/creators/submit     - Submit creator work
-```
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-This project is private and proprietary.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🆘 Support
+## 🤝 Support & Contact
 
-For deployment issues:
-
--   Check [DEPLOYMENT.md](./DEPLOYMENT.md)
--   Review [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
--   Verify environment variables
--   Check Vercel function logs
+- **Documentation**: See `BUSINESS_PITCH.md` for business overview
+- **Issues**: [GitHub Issues](https://github.com/MyNameIsBBB/vexto-pro-public/issues)
+- **Website**: [vexto.pro](https://vexto.pro)
+- **Email**: support@vexto.pro
 
 ---
 
-**Ready for Production & Deployment! 🎉**
+## ⚠️ Security Notes for Public Repository
 
-Made with ❤️ in Thailand
+This repository is configured for **public distribution**. Please note:
+
+- ✅ All `.env` files are gitignored
+- ✅ Secrets are excluded from commit history
+- ✅ Example env files provided (`.env.example`)
+- ⚠️ Never commit real API keys, passwords, or tokens
+- ⚠️ Regenerate all secrets before production use
+
+**Before deploying:**
+1. Generate new JWT secret: `openssl rand -base64 32`
+2. Create fresh OAuth credentials
+3. Use production API keys (not test keys)
+4. Enable MongoDB authentication
+5. Review `.gitignore` to ensure no sensitive files leak
+
+---
+
+**Built with ❤️ for businesses, creators, and professionals**

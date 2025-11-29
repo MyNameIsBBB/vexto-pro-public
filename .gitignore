@@ -38,6 +38,15 @@ frontend/.env.local
 
 # Vercel
 .vercel
+.vercelignore
+
+
+.dockerignore
+
+.nginx-api.vexto.pro.conf
+*.conf
+*.sh
+
 
 # IDEs
 .idea/
