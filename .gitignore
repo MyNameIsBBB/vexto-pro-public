@@ -37,7 +37,8 @@ frontend/.env*
 # Vercel
 .vercel
 .vercelignore
-
+vercel.json
+frontend/vercel.json
 
 .dockerignore
 frontend/.dockerignore
@@ -46,6 +47,10 @@ backend/.dockerignore
 .nginx-api.vexto.pro.conf
 *.conf
 *.sh
+*.yml
+*.yaml
+*.txt
+*.md
 
 
 # IDEs
